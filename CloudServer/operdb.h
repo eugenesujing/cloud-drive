@@ -12,10 +12,10 @@ public:
 
     static operDB& getInstance();
     ~operDB();
-
+    void initDB();
 private:
     QSqlDatabase myDB;
-    void initDB();
+
 
 };
 

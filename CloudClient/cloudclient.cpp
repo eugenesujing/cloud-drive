@@ -52,7 +52,7 @@ void CloudClient::loadConfig()
 }
 
 
-void CloudClient::on_send_button_clicked()
+/*void CloudClient::on_send_button_clicked()
 {
     QString msgToBeSent = ui->lineEdit->text();
     if(!msgToBeSent.isEmpty()){
@@ -67,4 +67,4 @@ void CloudClient::on_send_button_clicked()
             newPto = NULL;
         }
     }
-}
+}*/
