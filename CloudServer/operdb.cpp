@@ -5,7 +5,7 @@
 operDB::operDB(QObject *parent) : QObject(parent)
 {
     myDB = QSqlDatabase::addDatabase("QSQLITE");
-    //initDB();
+    initDB();
 }
 
 operDB &operDB::getInstance()
@@ -36,4 +36,14 @@ void operDB::initDB()
         QMessageBox::critical(NULL, "Open Database", "Failed To Open Database");
     }
 
+}
+
+int operDB::handleRegister(const char *name, const char *pwd)
+{
+    if(name == NULL || pwd == NULL){
+        return -1;
+    }
+    QString toBeExec = QString("insert into UserInfo(name,pwd) values(\'%1\',\'%2\')").arg(name).arg(pwd);
+    QSqlQuery query;
+    return query.exec(toBeExec);
 }

@@ -20,8 +20,13 @@ public slots:
     //Inform user when client is connected to server successfully
     void showConnected();
 private slots:
-    void on_send_button_clicked();
+    //void on_send_button_clicked();
 
+    void on_register_button_clicked();
+
+    void on_login_button_clicked();
+
+    void onRecv();
 private:
     Ui::CloudClient *ui;
 

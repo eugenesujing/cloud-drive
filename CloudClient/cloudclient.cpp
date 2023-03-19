@@ -16,6 +16,7 @@ CloudClient::CloudClient(QWidget *parent)
 
     connect(&mySocket, SIGNAL(connected()),this, SLOT(showConnected()));
     mySocket.connectToHost(QHostAddress(ip),port);
+    connect(this, SIGNAL(readyRead()), this, SLOT(onRecv()));
 }
 
 CloudClient::~CloudClient()
@@ -68,3 +69,60 @@ void CloudClient::loadConfig()
         }
     }
 }*/
+
+void CloudClient::on_register_button_clicked()
+{
+    QString nameToBeSent = ui->name_input->text();
+    QString pwdToBeSent = ui->pwd_input->text();
+    if(!nameToBeSent.isEmpty() && !pwdToBeSent.isEmpty()){
+        pto* newPto = makePTO(0);
+        if(newPto!=NULL){
+            newPto->totalSize = sizeof (pto);
+            newPto->msgType = ENUM_MSG_TYPE_REGISTER_REQUEST;
+            //Since the name and pwd is small enough to be fitted into preData, we will use it to store the data
+            memcpy(newPto->preData,nameToBeSent.toStdString().c_str(),nameToBeSent.size());
+            memcpy(newPto->preData+32,pwdToBeSent.toStdString().c_str(),pwdToBeSent.size());
+            mySocket.write((char*)newPto,newPto->totalSize);
+            free(newPto);
+            newPto = NULL;
+        }
+    }else{
+        QMessageBox::critical(this,"Register New Account", "Name or Password is empty. Please reenter.");
+    }
+}
+
+void CloudClient::on_login_button_clicked()
+{
+
+}
+
+void CloudClient::onRecv()
+{
+    unsigned int ptoSize = 0;
+    mySocket.read((char*)&ptoSize, sizeof(unsigned int));
+    unsigned int msgSize = ptoSize - sizeof (pto);
+
+    pto* recvPto = makePTO(msgSize);
+    if(recvPto!=NULL){
+        recvPto->totalSize = ptoSize;
+        mySocket.read((char*)recvPto +sizeof(unsigned int), ptoSize-sizeof (unsigned int));
+        //handle user request based on message type
+        switch (recvPto->msgType) {
+        case ENUM_MSG_TYPE_REGISTER_RESPOND:{
+            char* respond = (char*)malloc(msgSize);
+            memcpy(respond,(char*)recvPto->data,msgSize);
+            if(recvPto->code==1){
+                QMessageBox::information(this, "Register New Account", respond);
+            }else{
+                QMessageBox::warning(this, "Register New Account", respond);
+            }
+
+            break;
+        }
+        default:
+            break;
+        }
+      free(recvPto);
+      recvPto = NULL;
+    }
+}
