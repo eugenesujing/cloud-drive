@@ -71,3 +71,15 @@ int operDB::handleLogin(const char *name, const char *pwd)
         return -1;
     }
 }
+
+void operDB::handleOffline(const char *name)
+{
+    if(name == NULL){
+        qDebug()<<"empty name for handleOffline()";
+        return;
+    }
+    QString toBeExec = QString("update UserInfo set online=0 where name = \'%1\'").arg(name);
+    QSqlQuery query;
+    qDebug()<<toBeExec;
+    query.exec(toBeExec);
+}

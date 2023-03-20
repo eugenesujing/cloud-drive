@@ -15,6 +15,7 @@ public:
     void initDB();
     int handleRegister(const char* name, const char* pwd);
     int handleLogin(const char* name, const char* pwd);
+    void handleOffline(const char* name);
 private:
     QSqlDatabase myDB;
 

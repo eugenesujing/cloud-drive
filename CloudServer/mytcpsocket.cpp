@@ -6,12 +6,18 @@
 MyTcpSocket::MyTcpSocket()
 {
    connect(this, SIGNAL(readyRead()), this, SLOT(onRecv()));
+   connect(this, SIGNAL(disconnected()), this, SLOT(socektOff()));
 }
 
 MyTcpSocket &MyTcpSocket::getInstance()
 {
     static MyTcpSocket instance;
     return instance;
+}
+
+QString MyTcpSocket::getName() const
+{
+    return socketName;
 }
 
 void MyTcpSocket::onRecv()
@@ -71,6 +77,7 @@ void MyTcpSocket::onRecv()
             qDebug()<<ret;
             if(ret==1){
                 respondMsg = QString("");
+                socketName = name;
             }else if(ret==0){
                 respondMsg = QString("Account <%1> is already logged in!\0").arg(name);
 
@@ -100,4 +107,13 @@ void MyTcpSocket::onRecv()
     }
     free(recvPto);
     recvPto = NULL;
+}
+
+//when the connection between client and server is off, we set account online status to 0 and emit signals for server to delete this socket
+void MyTcpSocket::socektOff()
+{
+    if(!socketName.isEmpty()){
+        operDB::getInstance().handleOffline(socketName.toStdString().c_str());
+    }
+    emit clientOff(this);
 }

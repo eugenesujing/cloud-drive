@@ -15,6 +15,8 @@ public:
     static MyTcpServer& getInstance();
 
     void incomingConnection(qintptr handle);
+public slots:
+    void freeSocket(MyTcpSocket* mySocket);
 private:
     QList<MyTcpSocket*> socketList;
 };
