@@ -14,6 +14,7 @@ public:
     ~operDB();
     void initDB();
     int handleRegister(const char* name, const char* pwd);
+    int handleLogin(const char* name, const char* pwd);
 private:
     QSqlDatabase myDB;
 

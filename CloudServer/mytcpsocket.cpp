@@ -34,16 +34,17 @@ void MyTcpSocket::onRecv()
 
             QString respondMsg;
             int ret = operDB::getInstance().handleRegister(name,pwd);
+            qDebug()<<ret;
             if(ret==1){
-                respondMsg = QString("Your new account <%1> has been registered successfully!").arg(name);
+                respondMsg = QString("Your new account <%1> has been registered successfully!\0").arg(name);
             }else if(ret==0){
-                respondMsg = QString("User name <%1> has been registered by another user. Please use another name!").arg(name);
+                respondMsg = QString("User name <%1> has been registered by another user. Please use another name!\0").arg(name);
 
             }else if(ret==-1){
-                respondMsg = QString("Name or password is empty! Cannot handle register request.");
+                respondMsg = QString("Name or password is empty! Cannot handle register request.\0");
                 qDebug()<<"Name or password is empty! Cannot handle register request.";
             }
-
+            qDebug()<<respondMsg;
             pto* respPto = makePTO(respondMsg.size());
             if(respPto==NULL){
                 qDebug()<<"malloc for respPto failed.";
@@ -53,11 +54,40 @@ void MyTcpSocket::onRecv()
             respPto->totalSize = sizeof(pto) + respondMsg.size();
             respPto->msgType = ENUM_MSG_TYPE_REGISTER_RESPOND;
             strcpy(respPto->data, respondMsg.toStdString().c_str());
+            respPto->code = ret;
+            write((char*)respPto, respPto->totalSize);
+            free(respPto);
+            respPto = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_LOGIN_REQUEST:{
+            char name[32] = {' '};
+            char pwd[32] = {' '};
+            memcpy(name, recvPto->preData, 32);
+            memcpy(pwd, recvPto->preData+32, 32);
+
+            QString respondMsg;
+            int ret = operDB::getInstance().handleLogin(name,pwd);
+            qDebug()<<ret;
             if(ret==1){
-                respPto->code = 1;
-            }else{
-                respPto->code = 0;
+                respondMsg = QString("");
+            }else if(ret==0){
+                respondMsg = QString("Account <%1> is already logged in!\0").arg(name);
+
+            }else if(ret==-1){
+                respondMsg = QString("Incorrect name or password!\0");
             }
+            qDebug()<<respondMsg;
+            pto* respPto = makePTO(respondMsg.size());
+            if(respPto==NULL){
+                qDebug()<<"malloc for respPto failed.";
+                break;
+            }
+
+            respPto->totalSize = sizeof(pto) + respondMsg.size();
+            respPto->msgType = ENUM_MSG_TYPE_LOGIN_RESPOND;
+            strcpy(respPto->data, respondMsg.toStdString().c_str());
+            respPto->code = ret;
             write((char*)respPto, respPto->totalSize);
             free(respPto);
             respPto = NULL;
