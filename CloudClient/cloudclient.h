@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QTcpSocket>
 
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class CloudClient; }
 QT_END_NAMESPACE
@@ -15,6 +16,9 @@ class CloudClient : public QWidget
 public:
     CloudClient(QWidget *parent = nullptr);
     ~CloudClient();
+
+    static CloudClient& getInstance();
+    QTcpSocket& getSocket();
 
 public slots:
     //Inform user when client is connected to server successfully

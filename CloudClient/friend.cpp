@@ -1,7 +1,9 @@
+#include "protocol.h"
 #include "friend.h"
-
 #include "ui_friend.h"
+#include "cloudclient.h"
 #include <QVBoxLayout>
+#include <QDebug>
 
 
 Friend::Friend(QWidget *parent) :
@@ -34,5 +36,18 @@ void Friend::showOnline()
         ui->onlineFriend->show();
     }else{
         ui->onlineFriend->hide();
+    }
+}
+
+void Friend::on_onlineButton_clicked()
+{
+    pto* sendPTO = makePTO(0);
+    if(sendPTO==NULL){
+        qDebug()<<"makePTO failed for onlineButton";
+    }else{
+        sendPTO->msgType = ENUM_MSG_TYPE_SHOW_ONLINE_REQUEST;
+        CloudClient::getInstance().getSocket().write((char*)sendPTO);
+        free(sendPTO);
+        sendPTO = NULL;
     }
 }

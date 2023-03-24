@@ -20,7 +20,8 @@ SOURCES += \
     cloudserver.cpp \
     mytcpserver.cpp \
     mytcpsocket.cpp \
-    operdb.cpp
+    operdb.cpp \
+    protocol.cpp
 
 HEADERS += \
     cloudserver.h \

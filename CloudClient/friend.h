@@ -18,6 +18,9 @@ public:
 
 public slots:
     void showOnline();
+private slots:
+    void on_onlineButton_clicked();
+
 private:
     Ui::Friend *ui;
 

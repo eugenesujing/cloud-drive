@@ -11,6 +11,8 @@ enum ENUM_MSG_TYPE{
     ENUM_MSG_TYPE_REGISTER_RESPOND,
     ENUM_MSG_TYPE_LOGIN_REQUEST,
     ENUM_MSG_TYPE_LOGIN_RESPOND,
+    ENUM_MSG_TYPE_SHOW_ONLINE_REQUEST,
+    ENUM_MSG_TYPE_SHOW_ONLINE_RESPOND,
     ENUM_MSG_TYPE_MAX = 0x00ffffff
 };
 
@@ -24,15 +26,6 @@ typedef struct pto{
 }pto;
 
 
-pto* makePTO(unsigned int msgLen){
-    pto* newPto = (pto*)malloc(sizeof (pto) + sizeof (char)*msgLen);
-
-    if(newPto){
-        memset(newPto, 0, sizeof (pto));
-        return newPto;
-    }else{
-        return nullptr;
-    }
-}
+pto* makePTO(unsigned int msgLen);
 
 #endif // PROTOCOL_H

@@ -1,6 +1,7 @@
+#include "protocol.h"
 #include "cloudclient.h"
 #include "ui_cloudclient.h"
-#include "protocol.h"
+#include "home.h"
 #include <QFile>
 #include <QDebug>
 #include <QMessageBox>
@@ -22,6 +23,17 @@ CloudClient::CloudClient(QWidget *parent)
 CloudClient::~CloudClient()
 {
     delete ui;
+}
+
+CloudClient &CloudClient::getInstance()
+{
+    static CloudClient instance;
+    return instance;
+}
+
+QTcpSocket &CloudClient::getSocket()
+{
+    return mySocket;
 }
 
 //Inform user when client is connected to server successfully
@@ -149,6 +161,8 @@ void CloudClient::onRecv()
                 free(respond);
                 respond = NULL;
             }else{
+                Home::getInstance().show();
+                hide();
                 qDebug()<<"Login successfully.";
             }
 

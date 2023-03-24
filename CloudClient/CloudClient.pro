@@ -21,6 +21,7 @@ SOURCES += \
     main.cpp \
     cloudclient.cpp \
     online.cpp \
+    protocol.cpp \
     resource.cpp
 
 HEADERS += \
