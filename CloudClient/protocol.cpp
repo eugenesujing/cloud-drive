@@ -4,7 +4,7 @@ pto* makePTO(unsigned int msgLen){
     pto* newPto = (pto*)malloc(sizeof (pto) + sizeof (char)*msgLen);
 
     if(newPto){
-        memset(newPto, 0, sizeof (pto));
+        memset(newPto, 0, sizeof (pto) + sizeof (char)*msgLen);
         return newPto;
     }else{
         return nullptr;

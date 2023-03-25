@@ -15,6 +15,7 @@ class Friend : public QWidget
 public:
     explicit Friend(QWidget *parent = nullptr);
     ~Friend();
+    void handleShowOnlineResult(pto* recvPto);
 
 public slots:
     void showOnline();

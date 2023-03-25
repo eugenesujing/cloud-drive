@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QSqlDatabase>
+#include <QStringList>
 
 class operDB : public QObject
 {
@@ -16,6 +17,7 @@ public:
     int handleRegister(const char* name, const char* pwd);
     int handleLogin(const char* name, const char* pwd);
     void handleOffline(const char* name);
+    QStringList handleShowOnline(const char* name);
 private:
     QSqlDatabase myDB;
 

@@ -30,6 +30,12 @@ Friend::~Friend()
     delete ui;
 }
 
+void Friend::handleShowOnlineResult(pto *recvPto)
+{
+    if(recvPto == NULL) return;
+    ui->onlineFriend->showOnlineResult(recvPto);
+}
+
 void Friend::showOnline()
 {
     if(ui->onlineFriend->isHidden()){
@@ -46,7 +52,10 @@ void Friend::on_onlineButton_clicked()
         qDebug()<<"makePTO failed for onlineButton";
     }else{
         sendPTO->msgType = ENUM_MSG_TYPE_SHOW_ONLINE_REQUEST;
-        CloudClient::getInstance().getSocket().write((char*)sendPTO);
+        sendPTO->totalSize = sizeof(pto);
+        sendPTO->msgSize = 0;
+        CloudClient::getInstance().getSocket().write((char*)sendPTO, sendPTO->totalSize);
+        qDebug()<<sendPTO->data<<"send online";
         free(sendPTO);
         sendPTO = NULL;
     }

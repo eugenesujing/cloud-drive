@@ -17,25 +17,10 @@
    <item row="0" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QListWidget" name="listWidget">
+      <widget class="QListWidget" name="onlineWidget">
        <item>
         <property name="text">
-         <string>aaa</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>bbb</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>ccc</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>ddd</string>
+         <string>test</string>
         </property>
        </item>
       </widget>

@@ -28,3 +28,8 @@ Home &Home::getInstance()
     static Home instance;
     return instance;
 }
+
+Friend *Home::getFriend() const
+{
+    return friendWidget;
+}

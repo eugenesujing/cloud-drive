@@ -12,6 +12,7 @@ class Home : public QWidget
 public:
     explicit Home(QWidget *parent = nullptr);
     static Home& getInstance();
+    Friend* getFriend()const;
 signals:
 
 private:

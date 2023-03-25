@@ -129,13 +129,15 @@ void CloudClient::on_register_button_clicked()
 void CloudClient::onRecv()
 {
     unsigned int ptoSize = 0;
+    //get size of pto first
     mySocket.read((char*)&ptoSize, sizeof(unsigned int));
     unsigned int msgSize = ptoSize - sizeof (pto);
 
     pto* recvPto = makePTO(msgSize);
     if(recvPto!=NULL){
         recvPto->totalSize = ptoSize;
-        mySocket.read((char*)recvPto +sizeof(unsigned int), ptoSize-sizeof (unsigned int));
+        qDebug()<<"totalSize="<<recvPto->totalSize;
+        mySocket.read((char*)recvPto +sizeof(unsigned int), recvPto->totalSize-sizeof (unsigned int));
         //handle user request based on message type
         switch (recvPto->msgType) {
         case ENUM_MSG_TYPE_REGISTER_RESPOND:{
@@ -165,6 +167,10 @@ void CloudClient::onRecv()
                 hide();
                 qDebug()<<"Login successfully.";
             }
+            break;
+        }
+        case ENUM_MSG_TYPE_SHOW_ONLINE_RESPOND:{
+            Home::getInstance().getFriend()->handleShowOnlineResult(recvPto);
 
             break;
         }

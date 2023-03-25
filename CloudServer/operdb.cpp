@@ -83,3 +83,21 @@ void operDB::handleOffline(const char *name)
     qDebug()<<toBeExec;
     query.exec(toBeExec);
 }
+
+QStringList operDB::handleShowOnline(const char *name)
+{
+    QStringList res;
+    res.clear();
+    if(name == NULL){
+        qDebug()<<"empty name for handleShowOnline()";
+        return res;
+    }
+    QString toBeExec = QString("select name from UserInfo where online = 1 and name != \'%1\'").arg(name);
+    QSqlQuery query;
+    qDebug()<<toBeExec;
+    query.exec(toBeExec);
+    while(query.next()){
+        res.append(query.value(0).toString());
+    }
+    return res;
+}

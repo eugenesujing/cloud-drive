@@ -27,9 +27,11 @@ void MyTcpSocket::onRecv()
     unsigned int msgSize = ptoSize - sizeof (pto);
 
     pto* recvPto = makePTO(msgSize);
+
     if(recvPto!=NULL){
         recvPto->totalSize = ptoSize;
         this->read((char*)recvPto +sizeof(unsigned int), ptoSize-sizeof (unsigned int));
+        qDebug()<<"msgType = "<<recvPto->msgType;
         //handle user request based on message type
         switch (recvPto->msgType) {
         case ENUM_MSG_TYPE_REGISTER_REQUEST:{
@@ -96,6 +98,26 @@ void MyTcpSocket::onRecv()
             strcpy(respPto->data, respondMsg.toStdString().c_str());
             respPto->code = ret;
             write((char*)respPto, respPto->totalSize);
+            free(respPto);
+            respPto = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_SHOW_ONLINE_REQUEST:{
+            qDebug()<<"SHOW_ONLINE";
+            QStringList res = operDB::getInstance().handleShowOnline(socketName.toStdString().c_str());
+            qDebug()<<"res.size="<<res.size();
+
+            pto* respPto = makePTO(32*res.size());
+            respPto->msgSize = 32*res.size();
+            respPto->msgType = ENUM_MSG_TYPE_SHOW_ONLINE_RESPOND;
+            respPto->totalSize = respPto->msgSize + sizeof(pto);
+            for(int i=0; i<res.size(); i++){
+                memcpy((char*)(respPto->data) + 32*i,res.at(i).toStdString().c_str(), res.at(i).size());
+                qDebug()<<"respPto->data="<<(char*)(respPto->data)+32*i;
+            }
+            memcpy((char*)(respPto->preData),res.at(0).toStdString().c_str(), res.at(0).size());
+            write((char*)respPto, respPto->totalSize);
+
             free(respPto);
             respPto = NULL;
             break;
