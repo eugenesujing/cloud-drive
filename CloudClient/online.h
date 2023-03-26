@@ -17,6 +17,9 @@ public:
     ~Online();
     void showOnlineResult(pto* recvPto);
 
+private slots:
+    void on_pushButton_clicked();
+
 private:
     Ui::Online *ui;
 };

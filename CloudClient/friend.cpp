@@ -4,7 +4,8 @@
 #include "cloudclient.h"
 #include <QVBoxLayout>
 #include <QDebug>
-
+#include <QInputDialog>
+#include <QMessageBox>
 
 Friend::Friend(QWidget *parent) :
     QWidget(parent),
@@ -59,4 +60,27 @@ void Friend::on_onlineButton_clicked()
         free(sendPTO);
         sendPTO = NULL;
     }
+}
+
+void Friend::on_searchButton_clicked()
+{
+    QString name = QInputDialog::getText(this, "Search User", "User Name:");
+    if(!name.isEmpty()){
+        searchUserName = name;
+        pto* sendPTO = makePTO(0);
+        if(sendPTO){
+            sendPTO->msgType = ENUM_MSG_TYPE_SEARCH_USER_REQUEST;
+            sendPTO->totalSize = sizeof(pto);
+            memcpy(sendPTO->preData,name.toStdString().c_str(),32);
+            qDebug()<<"search name = "<<sendPTO->preData;
+            CloudClient::getInstance().getSocket().write((char*)sendPTO, sendPTO->totalSize);
+            free(sendPTO);
+            sendPTO = NULL;
+        }else{
+            qDebug()<<"malloc for searchButton failed";
+        }
+    }else{
+        QMessageBox::warning(this, "Search User", "User name cannot be empty!");
+    }
+
 }

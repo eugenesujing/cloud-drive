@@ -101,3 +101,58 @@ QStringList operDB::handleShowOnline(const char *name)
     }
     return res;
 }
+
+int operDB::handleSearchUser(const char *name)
+{
+    if(name == NULL){
+        return -1;
+    }
+    QString toBeExec = QString("select online from UserInfo where name=\'%1\'").arg(name);
+    QSqlQuery query;
+    qDebug()<<toBeExec;
+    query.exec(toBeExec);
+    if(query.next()){
+        //the user being searched is offline
+        if(query.value(0)==0){
+            return 1;
+        }else{
+            //the user being searched is online
+            return 2;
+        }
+    }else{
+        //there is no matching account with the name and pwd provided
+        return 0;
+    }
+}
+
+int operDB::handleAddFriend(const char *searchName, const char *loginName)
+{
+    if(searchName == NULL || loginName == NULL){
+        return -1;
+    }
+    QString toBeExec = QString("select * from Friend where (id=(select id from UserInfo where name =\'%1\') and friendId=( select id from UserInfo where name =\'%2\')) or(id=(select id from UserInfo where name =\'%3\') and friendId=( select id from UserInfo where name =\'%4\'))").arg(loginName).arg(searchName).arg(searchName).arg(loginName);
+    QSqlQuery query;
+    qDebug()<<toBeExec;
+    query.exec(toBeExec);
+    if(query.next()){
+        return 0;//they are friends already
+    }else{
+        //they haven't been friends yet
+        QString toBeExec = QString("select online from UserInfo where name=\'%1\'").arg(searchName);
+        QSqlQuery query;
+        qDebug()<<toBeExec;
+        query.exec(toBeExec);
+        if(query.next()){
+            //the user being searched is offline
+            if(query.value(0)==0){
+                return 1;
+            }else{
+                //the user being searched is online
+                return 2;
+            }
+        }else{
+            //there is no matching account with the name and pwd provided
+            return 3;
+        }
+    }
+}

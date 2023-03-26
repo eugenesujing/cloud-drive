@@ -36,6 +36,11 @@ QTcpSocket &CloudClient::getSocket()
     return mySocket;
 }
 
+QString CloudClient::getLoginName() const
+{
+    return loginName;
+}
+
 //Inform user when client is connected to server successfully
 void CloudClient::showConnected()
 {
@@ -85,6 +90,7 @@ void CloudClient::loadConfig()
 void CloudClient::on_login_button_clicked()
 {
     QString nameToBeSent = ui->name_input->text();
+    loginName = nameToBeSent;
     QString pwdToBeSent = ui->pwd_input->text();
     if(!nameToBeSent.isEmpty() && !pwdToBeSent.isEmpty()){
         pto* newPto = makePTO(0);
@@ -162,6 +168,7 @@ void CloudClient::onRecv()
                 QMessageBox::warning(this, "Log In", respond);
                 free(respond);
                 respond = NULL;
+                loginName.clear();
             }else{
                 Home::getInstance().show();
                 hide();
@@ -172,6 +179,19 @@ void CloudClient::onRecv()
         case ENUM_MSG_TYPE_SHOW_ONLINE_RESPOND:{
             Home::getInstance().getFriend()->handleShowOnlineResult(recvPto);
 
+            break;
+        }
+        case ENUM_MSG_TYPE_SEARCH_USER_RESPOND:{
+            char* respond = (char*)malloc(msgSize+1);
+            memset(respond,0,msgSize+1);
+            memcpy(respond,(char*)recvPto->data,msgSize);
+            if(recvPto->code>=0){
+                QMessageBox::information(this, "Search User Result", respond);
+            }else{
+                QMessageBox::warning(this, "Search User Result", respond);
+            }
+            free(respond);
+            respond = NULL;
             break;
         }
         default:

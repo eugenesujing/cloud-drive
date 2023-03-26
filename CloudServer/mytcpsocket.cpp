@@ -122,6 +122,48 @@ void MyTcpSocket::onRecv()
             respPto = NULL;
             break;
         }
+        case ENUM_MSG_TYPE_SEARCH_USER_REQUEST:{
+            char name[32] = {' '};
+            memcpy(name, recvPto->preData, 32);
+
+            QString respondMsg;
+            int ret = operDB::getInstance().handleSearchUser(name);
+            qDebug()<<ret;
+            if(ret==1){
+                respondMsg = QString("Account <%1> is offline!").arg(name);
+            }else if(ret==2){
+                respondMsg = QString("Account <%1> is online!").arg(name);
+
+            }else if(ret==-1){
+                respondMsg = QString("Invalid or empty username!");
+            }else if(ret==0){
+                respondMsg = QString("Account <%1> does not exist!").arg(name);
+            }
+            qDebug()<<respondMsg;
+            pto* respPto = makePTO(respondMsg.size());
+            if(respPto==NULL){
+                qDebug()<<"malloc for respPto failed.";
+                break;
+            }
+
+            respPto->totalSize = sizeof(pto) + respondMsg.size();
+            respPto->msgType = ENUM_MSG_TYPE_SEARCH_USER_RESPOND;
+            strcpy(respPto->data, respondMsg.toStdString().c_str());
+            respPto->code = ret;
+            write((char*)respPto, respPto->totalSize);
+            free(respPto);
+            respPto = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_ADD_FRIEND_REQUEST:{
+            char searchName[32] = {' '};
+            char loginName[32] = {' '};
+            memcpy(searchName, recvPto->preData, 32);
+            memcpy(loginName, recvPto->preData+32, 32);
+
+            int ret = operDB::getInstance().handleAddFriend(searchName,loginName);
+            break;
+        }
         default:
             break;
         }

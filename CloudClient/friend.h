@@ -22,9 +22,11 @@ public slots:
 private slots:
     void on_onlineButton_clicked();
 
+    void on_searchButton_clicked();
+
 private:
     Ui::Friend *ui;
-
+    QString searchUserName;
 };
 
 #endif // FRIEND_H
