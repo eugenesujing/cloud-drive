@@ -20,6 +20,7 @@ public:
     QStringList handleShowOnline(const char* name);
     int handleSearchUser(const char* name);
     int handleAddFriend(const char* searchName, const char* loginName);
+    int handleAddFriendAgree(const char* searchName, const char* loginName);
 private:
     QSqlDatabase myDB;
 

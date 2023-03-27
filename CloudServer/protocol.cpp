@@ -5,6 +5,8 @@ pto* makePTO(unsigned int msgLen){
 
     if(newPto){
         memset(newPto, 0, sizeof (pto) + sizeof (char)*msgLen);
+        newPto->totalSize = sizeof (pto) + sizeof (char)*msgLen;
+        newPto->msgSize = sizeof (char)*msgLen;
         return newPto;
     }else{
         return nullptr;

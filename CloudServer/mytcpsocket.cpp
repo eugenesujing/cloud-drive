@@ -1,7 +1,9 @@
 #include "mytcpsocket.h"
+#include "mytcpserver.h"
 #include "protocol.h"
 #include "operdb.h"
 #include <QDebug>
+#include <QMessageBox>
 
 MyTcpSocket::MyTcpSocket()
 {
@@ -59,7 +61,7 @@ void MyTcpSocket::onRecv()
                 break;
             }
 
-            respPto->totalSize = sizeof(pto) + respondMsg.size();
+            //respPto->totalSize = sizeof(pto) + respondMsg.size();
             respPto->msgType = ENUM_MSG_TYPE_REGISTER_RESPOND;
             strcpy(respPto->data, respondMsg.toStdString().c_str());
             respPto->code = ret;
@@ -93,7 +95,7 @@ void MyTcpSocket::onRecv()
                 break;
             }
 
-            respPto->totalSize = sizeof(pto) + respondMsg.size();
+            //respPto->totalSize = sizeof(pto) + respondMsg.size();
             respPto->msgType = ENUM_MSG_TYPE_LOGIN_RESPOND;
             strcpy(respPto->data, respondMsg.toStdString().c_str());
             respPto->code = ret;
@@ -108,14 +110,13 @@ void MyTcpSocket::onRecv()
             qDebug()<<"res.size="<<res.size();
 
             pto* respPto = makePTO(32*res.size());
-            respPto->msgSize = 32*res.size();
+            //respPto->msgSize = 32*res.size();
             respPto->msgType = ENUM_MSG_TYPE_SHOW_ONLINE_RESPOND;
-            respPto->totalSize = respPto->msgSize + sizeof(pto);
+            //respPto->totalSize = respPto->msgSize + sizeof(pto);
             for(int i=0; i<res.size(); i++){
                 memcpy((char*)(respPto->data) + 32*i,res.at(i).toStdString().c_str(), res.at(i).size());
                 qDebug()<<"respPto->data="<<(char*)(respPto->data)+32*i;
             }
-            memcpy((char*)(respPto->preData),res.at(0).toStdString().c_str(), res.at(0).size());
             write((char*)respPto, respPto->totalSize);
 
             free(respPto);
@@ -146,7 +147,7 @@ void MyTcpSocket::onRecv()
                 break;
             }
 
-            respPto->totalSize = sizeof(pto) + respondMsg.size();
+            //respPto->totalSize = sizeof(pto) + respondMsg.size();
             respPto->msgType = ENUM_MSG_TYPE_SEARCH_USER_RESPOND;
             strcpy(respPto->data, respondMsg.toStdString().c_str());
             respPto->code = ret;
@@ -162,6 +163,69 @@ void MyTcpSocket::onRecv()
             memcpy(loginName, recvPto->preData+32, 32);
 
             int ret = operDB::getInstance().handleAddFriend(searchName,loginName);
+            QString respondMsg;
+            qDebug()<<ret;
+            if(ret==1){
+                respondMsg = QString("Account <%1> is offline.").arg(searchName);
+            }else if(ret==2){
+                pto* resendPto = makePTO(0);
+                memcpy(resendPto,recvPto,sizeof (pto));
+                resendPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESEND_REQUEST;
+                MyTcpServer::getInstance().resendAddFriendRequest(searchName,resendPto);
+                respondMsg = QString("Your friend request has been sent to <%1>.").arg(searchName);
+            }else if(ret==-1){
+                respondMsg = QString("Unknown Error.");
+            }else if(ret==0){
+                respondMsg = QString("Account <%1> is your friend already.").arg(searchName);
+            }else if(ret==3){
+                respondMsg = QString("Account <%1> does not exist.").arg(searchName);
+            }
+            qDebug()<<respondMsg;
+            pto* respPto = makePTO(respondMsg.size());
+            if(respPto==NULL){
+                qDebug()<<"malloc for respPto failed.";
+                break;
+            }
+
+            //respPto->totalSize = sizeof(pto) + respondMsg.size();
+            respPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
+            strcpy(respPto->data, respondMsg.toStdString().c_str());
+            respPto->code = ret;
+            write((char*)respPto, respPto->totalSize);
+            free(respPto);
+            respPto = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_ADD_FRIEND_RESEND_RESPOND:{
+            char searchName[32] = {' '};
+            char loginName[32] = {' '};
+            memcpy(searchName, recvPto->preData, 32);
+            memcpy(loginName, recvPto->preData+32, 32);
+
+            QString respondMsg;
+            int ret = 1;
+            if(recvPto->code == QMessageBox::Yes){
+                ret = operDB::getInstance().handleAddFriendAgree(searchName,loginName);
+                if(ret==1){
+                    respondMsg = QString("<%1> has accepted your friend request.").arg(searchName);
+                }else{
+                    respondMsg = QString("System Error. Your friend request to <%1> has failed to be completed.").arg(searchName);
+                    ret = -1;
+                }
+            }else if(recvPto->code == QMessageBox::No){
+                respondMsg = QString("<%1> has reclined your friend request.").arg(searchName);
+            }
+
+            pto* respPto = makePTO(respondMsg.size());
+            if(respPto==NULL){
+                qDebug()<<"malloc for respPto failed.";
+                break;
+            }
+
+            respPto->code = ret;
+            respPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
+            strcpy(respPto->data, respondMsg.toStdString().c_str());
+            MyTcpServer::getInstance().resendAddFriendResendRespond(loginName, respPto);
             break;
         }
         default:

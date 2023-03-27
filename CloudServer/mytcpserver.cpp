@@ -22,13 +22,49 @@ void MyTcpServer::incomingConnection(qintptr handle)
     socketList.append(newSocket);
 }
 
+void MyTcpServer::resendAddFriendRequest(const char *searchName, pto *sendPTO)
+{
+    if(searchName == NULL || sendPTO == NULL){
+        return;
+    }
+    QList<MyTcpSocket*>::iterator iter = socketList.begin();
+    for(;iter != socketList.end(); iter++){
+        if((*iter)->getName() == searchName){
+            (*iter)->write((char*)sendPTO,sendPTO->totalSize);
+            break;
+        }
+    }
+    free(sendPTO);
+    sendPTO = NULL;
+}
+
+void MyTcpServer::resendAddFriendResendRespond(const char *loginName, pto *sendPTO)
+{
+    if(loginName == NULL || sendPTO == NULL){
+        return;
+    }
+    QList<MyTcpSocket*>::iterator iter = socketList.begin();
+    for(;iter != socketList.end(); iter++){
+        if((*iter)->getName() == loginName){
+            (*iter)->write((char*)sendPTO,sendPTO->totalSize);
+            break;
+        }
+    }
+    free(sendPTO);
+    sendPTO = NULL;
+}
+
 void MyTcpServer::freeSocket(MyTcpSocket *mySocket)
 {
+    if(mySocket == NULL){
+        return;
+    }
     QList<MyTcpSocket*>::iterator iter = socketList.begin();
     for(;iter != socketList.end(); iter++){
         if(*iter == mySocket){
             delete *iter;
             socketList.erase(iter);
+            break;
         }
     }
     //display all sockets' user name

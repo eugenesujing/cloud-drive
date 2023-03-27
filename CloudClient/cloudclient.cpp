@@ -194,6 +194,36 @@ void CloudClient::onRecv()
             respond = NULL;
             break;
         }
+        case ENUM_MSG_TYPE_ADD_FRIEND_RESPOND:{
+            char* respond = (char*)malloc(msgSize+1);
+            memset(respond,0,msgSize+1);
+            memcpy(respond,(char*)recvPto->data,msgSize);
+            if(recvPto->code == -1){
+                QMessageBox::warning(this, "Add Friend Request", respond);
+            }else{
+                QMessageBox::information(this, "Add Friend Request", respond);
+            }
+            free(respond);
+            respond = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_ADD_FRIEND_RESEND_REQUEST:{
+            //char searchName[32] = {' '};
+            char loginName[32] = {' '};
+            //memcpy(searchName, recvPto->preData, 32);
+            memcpy(loginName, recvPto->preData+32, 32);
+            QString req = QString("<%1> would like to connect.").arg(loginName);
+            int ret = QMessageBox::information(this, "New Friend Request", req, QMessageBox::Yes, QMessageBox::No);
+            pto* respPto = makePTO(0);
+            respPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESEND_RESPOND;
+            respPto->code = ret;
+            memcpy(respPto->preData, recvPto->preData, 64);
+
+            mySocket.write((char*)respPto, respPto->totalSize);
+            free(respPto);
+            respPto = NULL;
+            break;
+        }
         default:
             break;
         }

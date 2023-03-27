@@ -156,3 +156,14 @@ int operDB::handleAddFriend(const char *searchName, const char *loginName)
         }
     }
 }
+
+int operDB::handleAddFriendAgree(const char *searchName, const char *loginName)
+{
+    if(searchName == NULL || loginName == NULL){
+        return -1;
+    }
+    QString toBeExec = QString("insert into Friend values((select id from UserInfo where name =\'%1\'),(select id from UserInfo where name =\'%2\'))").arg(searchName).arg(loginName);
+    QSqlQuery query;
+    qDebug()<<toBeExec;
+    return query.exec(toBeExec);
+}
