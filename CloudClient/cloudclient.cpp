@@ -144,6 +144,7 @@ void CloudClient::onRecv()
         recvPto->totalSize = ptoSize;
         qDebug()<<"totalSize="<<recvPto->totalSize;
         mySocket.read((char*)recvPto +sizeof(unsigned int), recvPto->totalSize-sizeof (unsigned int));
+
         //handle user request based on message type
         switch (recvPto->msgType) {
         case ENUM_MSG_TYPE_REGISTER_RESPOND:{

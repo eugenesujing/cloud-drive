@@ -11,6 +11,11 @@ MyTcpSocket::MyTcpSocket()
    connect(this, SIGNAL(disconnected()), this, SLOT(socektOff()));
 }
 
+MyTcpSocket::~MyTcpSocket()
+{
+    close();
+}
+
 MyTcpSocket &MyTcpSocket::getInstance()
 {
     static MyTcpSocket instance;
@@ -94,12 +99,16 @@ void MyTcpSocket::onRecv()
                 qDebug()<<"malloc for respPto failed.";
                 break;
             }
-
+            qDebug()<<"Successfully makePTO for login request";
             //respPto->totalSize = sizeof(pto) + respondMsg.size();
             respPto->msgType = ENUM_MSG_TYPE_LOGIN_RESPOND;
+            qDebug()<<"Successfully makePTO for login request";
             strcpy(respPto->data, respondMsg.toStdString().c_str());
+            qDebug()<<"Successfully makePTO for login request";
             respPto->code = ret;
-            write((char*)respPto, respPto->totalSize);
+            qDebug()<<"respPto->totoalSize = "<<respPto->totalSize;
+            //write((char*)respPto, respPto->totalSize);
+            qDebug()<<"Successfully sent msg for login request";
             free(respPto);
             respPto = NULL;
             break;
@@ -243,5 +252,8 @@ void MyTcpSocket::socektOff()
     if(!socketName.isEmpty()){
         operDB::getInstance().handleOffline(socketName.toStdString().c_str());
     }
+    qDebug()<<"Successfully called handleOffLine()";
+    qDebug()<<"SocketName = "<<socketName;
     emit clientOff(this);
+    qDebug()<<"Successfully emit clientOff()";
 }

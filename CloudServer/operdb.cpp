@@ -82,6 +82,7 @@ void operDB::handleOffline(const char *name)
     QSqlQuery query;
     qDebug()<<toBeExec;
     query.exec(toBeExec);
+    qDebug()<<"Successfully ran handleOffline()";
 }
 
 QStringList operDB::handleShowOnline(const char *name)

@@ -9,7 +9,7 @@ class MyTcpSocket : public QTcpSocket
     Q_OBJECT
 public:
     MyTcpSocket();
-
+    ~MyTcpSocket();
     static MyTcpSocket& getInstance();
     QString getName()const;
 public slots:

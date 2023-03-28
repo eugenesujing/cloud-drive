@@ -2,7 +2,8 @@
 
 MyTcpServer::MyTcpServer()
 {
-
+    socketList.clear();
+    socketList.reserve(3);
 }
 
 MyTcpServer &MyTcpServer::getInstance()
@@ -17,6 +18,7 @@ void MyTcpServer::incomingConnection(qintptr handle)
     //generate a new socket for each new incoming connection
     //and this socket will be responsible for the data exchange with the client that just connected
     MyTcpSocket* newSocket = new MyTcpSocket;
+    qDebug()<<"newSocket="<<newSocket;
     newSocket->setSocketDescriptor(handle);
     connect(newSocket,SIGNAL(clientOff(MyTcpSocket*)),this,SLOT(freeSocket(MyTcpSocket*)));
     socketList.append(newSocket);
@@ -56,24 +58,28 @@ void MyTcpServer::resendAddFriendResendRespond(const char *loginName, pto *sendP
 
 void MyTcpServer::freeSocket(MyTcpSocket *mySocket)
 {
+    qDebug()<<"freeSocket()1";
     if(mySocket == NULL){
         return;
     }
     QList<MyTcpSocket*>::iterator iter = socketList.begin();
     for(;iter != socketList.end(); iter++){
         if(*iter == mySocket){
-            delete *iter;
+            //in case MyTcpSocket::socketOff() hasn't completed yet, we use deleteLater() to prevent server crash
+            (*iter)->deleteLater();
             socketList.erase(iter);
+
             break;
         }
     }
-    //display all sockets' user name
+    qDebug()<<"freeSocket()2";
+    /*//display all sockets' user name
     for(iter=socketList.begin();iter!=socketList.end();iter++){
         qDebug()<<(*iter)->getName();
     }
     if(socketList.isEmpty()){
         qDebug()<<"socketlist is empty";
-    }
+    }*/
 }
 
 
