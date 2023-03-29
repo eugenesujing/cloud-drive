@@ -3,7 +3,6 @@
 MyTcpServer::MyTcpServer()
 {
     socketList.clear();
-    socketList.reserve(3);
 }
 
 MyTcpServer &MyTcpServer::getInstance()

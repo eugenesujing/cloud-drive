@@ -19,13 +19,11 @@ void Online::showOnlineResult(pto *recvPto)
 {
     if(recvPto == NULL) return;
     int n = recvPto->msgSize /32;
-    qDebug()<<"n="<<n;
     char temp[32];
     ui->onlineWidget->clear();
     for(int i=0; i<n; i++){
         memcpy(temp, (char*)(recvPto->data) + i*32, 32);
         ui->onlineWidget->addItem(temp);
-        qDebug()<<temp;
     }
 }
 

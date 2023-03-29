@@ -107,7 +107,7 @@ void MyTcpSocket::onRecv()
             qDebug()<<"Successfully makePTO for login request";
             respPto->code = ret;
             qDebug()<<"respPto->totoalSize = "<<respPto->totalSize;
-            //write((char*)respPto, respPto->totalSize);
+            write((char*)respPto, respPto->totalSize);
             qDebug()<<"Successfully sent msg for login request";
             free(respPto);
             respPto = NULL;
@@ -235,6 +235,34 @@ void MyTcpSocket::onRecv()
             respPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
             strcpy(respPto->data, respondMsg.toStdString().c_str());
             MyTcpServer::getInstance().resendAddFriendResendRespond(loginName, respPto);
+            break;
+        }
+        case ENUM_MSG_TYPE_FRESH_FRIENDLIST_REQUEST:{
+            QStringList res = operDB::getInstance().handleFreshFriendList(socketName.toStdString().c_str());
+            pto* respPto = makePTO(res.size()*32);
+            if(respPto==NULL){
+                qDebug()<<"malloc for respPto failed.";
+                break;
+            }
+            respPto->msgType = ENUM_MSG_TYPE_FRESH_FRIENDLIST_RESPOND;
+            for(int i=0; i<res.size(); i++){
+                memcpy((char*)(respPto->data)+i*32,res[i].toStdString().c_str(), res[i].size());
+                qDebug()<<"respPto->data="<<(char*)(respPto->data)+32*i;
+            }
+            write((char*)respPto,respPto->totalSize);
+            free(respPto);
+            respPto = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_DELETE_FRIEND_REQUEST:{
+            char friendName[32] = {' '};
+            char loginName[32] = {' '};
+            memcpy(friendName, recvPto->preData, 32);
+            memcpy(loginName, recvPto->preData+32, 32);
+
+            int ret = operDB::getInstance().handleDeleteFriend(friendName,loginName);
+            QString respondMsg;
+            if(ret)
             break;
         }
         default:

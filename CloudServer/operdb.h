@@ -21,6 +21,8 @@ public:
     int handleSearchUser(const char* name);
     int handleAddFriend(const char* searchName, const char* loginName);
     int handleAddFriendAgree(const char* searchName, const char* loginName);
+    QStringList handleFreshFriendList(const char* name);
+    int handleDeleteFriend(const char* friendName, const char* loginName);
 private:
     QSqlDatabase myDB;
 

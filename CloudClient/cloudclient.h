@@ -20,6 +20,7 @@ public:
     static CloudClient& getInstance();
     QTcpSocket& getSocket();
     QString getLoginName()const;
+    void loadFriendList();
 public slots:
     //Inform user when client is connected to server successfully
     void showConnected();
@@ -42,5 +43,6 @@ private:
     QString loginName;
     //Load config from resource file
     void loadConfig();
+
 };
 #endif // CLOUDCLIENT_H

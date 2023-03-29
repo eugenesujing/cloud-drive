@@ -37,6 +37,18 @@ void Friend::handleShowOnlineResult(pto *recvPto)
     ui->onlineFriend->showOnlineResult(recvPto);
 }
 
+void Friend::handleLoadFriendList(pto *recvPto)
+{
+    if(recvPto == NULL) return;
+    int n = recvPto->msgSize/32;
+    char temp[32] = {""};
+    ui->friendList->clear();
+    for(int i=0; i <n; i++){
+        memcpy(temp, (char*)(recvPto->data)+i*32, 32);
+        ui->friendList->addItem(temp);
+    }
+}
+
 void Friend::showOnline()
 {
     if(ui->onlineFriend->isHidden()){
@@ -70,7 +82,6 @@ void Friend::on_searchButton_clicked()
         pto* sendPTO = makePTO(0);
         if(sendPTO){
             sendPTO->msgType = ENUM_MSG_TYPE_SEARCH_USER_REQUEST;
-            sendPTO->totalSize = sizeof(pto);
             memcpy(sendPTO->preData,name.toStdString().c_str(),32);
             qDebug()<<"search name = "<<sendPTO->preData;
             CloudClient::getInstance().getSocket().write((char*)sendPTO, sendPTO->totalSize);
@@ -83,4 +94,29 @@ void Friend::on_searchButton_clicked()
         QMessageBox::warning(this, "Search User", "User name cannot be empty!");
     }
 
+}
+
+void Friend::on_refreshButton_clicked()
+{
+    CloudClient::getInstance().loadFriendList();
+}
+
+void Friend::on_deleteButton_clicked()
+{
+    if(ui->friendList->currentItem()){
+        QString nameToBeDeleted = ui->friendList->currentItem()->text();
+        pto* sendPTO = makePTO(0);
+        if(sendPTO){
+            sendPTO->msgType = ENUM_MSG_TYPE_DELETE_FRIEND_REQUEST;
+            memcpy(sendPTO->preData,nameToBeDeleted.toStdString().c_str(),32);
+            memcpy(sendPTO->preData +32,CloudClient::getInstance().getLoginName().toStdString().c_str(),32);
+            CloudClient::getInstance().getSocket().write((char*)sendPTO, sendPTO->totalSize);
+            free(sendPTO);
+            sendPTO = NULL;
+        }else{
+            qDebug()<<"malloc for searchButton failed";
+        }
+    }else{
+        QMessageBox::warning(this, "Delete Friend", "Please select a friend.");
+    }
 }

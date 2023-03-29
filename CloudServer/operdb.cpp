@@ -168,3 +168,31 @@ int operDB::handleAddFriendAgree(const char *searchName, const char *loginName)
     qDebug()<<toBeExec;
     return query.exec(toBeExec);
 }
+
+QStringList operDB::handleFreshFriendList(const char *name)
+{
+    QStringList res;
+    if(name == NULL){
+        return res;
+    }
+    QString toBeExec = QString("select name from userinfo where id in (select friendid from friend where id = (select id from userinfo where name = \'%1\')) or id in (select id from friend where friendId = (select id from userinfo where name = \'%1\'))").arg(name);
+    QSqlQuery query;
+    qDebug()<<toBeExec;
+    query.exec(toBeExec);
+    while(query.next()){
+        res.append(query.value(0).toString());
+        qDebug()<<query.value(0).toString();
+    }
+    return res;
+}
+
+int operDB::handleDeleteFriend(const char *friendName, const char *loginName)
+{
+    if(friendName == NULL || loginName == NULL){
+        return -1;
+    }
+    QString toBeExec = QString("delete from friend where (id = (select id from userinfo where name = \'%1\') and friendid = (select id from userinfo where name = \'%2\')) or (id = (select id from userinfo where name = \'%2\') and friendid = (select id from userinfo where name = \'%1\'))").arg(friendName).arg(loginName);
+    QSqlQuery query;
+    qDebug()<<toBeExec;
+    return query.exec(toBeExec);
+}

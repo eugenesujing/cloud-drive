@@ -69,6 +69,20 @@ void CloudClient::loadConfig()
     }
 }
 
+void CloudClient::loadFriendList()
+{
+    pto* sendPto = makePTO(0);
+    if(sendPto==NULL){
+        qDebug()<<"malloc for sendPto failed on CloudClient::loadFriendList()";
+        return;
+    }
+    sendPto->msgType = ENUM_MSG_TYPE_FRESH_FRIENDLIST_REQUEST;
+    mySocket.write((char*)sendPto,sendPto->totalSize);
+    free(sendPto);
+    sendPto = NULL;
+
+}
+
 
 /*void CloudClient::on_send_button_clicked()
 {
@@ -171,6 +185,7 @@ void CloudClient::onRecv()
                 respond = NULL;
                 loginName.clear();
             }else{
+                loadFriendList();
                 Home::getInstance().show();
                 hide();
                 qDebug()<<"Login successfully.";
@@ -216,6 +231,10 @@ void CloudClient::onRecv()
             QString req = QString("<%1> would like to connect.").arg(loginName);
             int ret = QMessageBox::information(this, "New Friend Request", req, QMessageBox::Yes, QMessageBox::No);
             pto* respPto = makePTO(0);
+            if(respPto==NULL){
+                qDebug()<<"malloc for sendPto failed on ENUM_MSG_TYPE_ADD_FRIEND_RESEND_REQUEST";
+                return;
+            }
             respPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESEND_RESPOND;
             respPto->code = ret;
             memcpy(respPto->preData, recvPto->preData, 64);
@@ -223,6 +242,11 @@ void CloudClient::onRecv()
             mySocket.write((char*)respPto, respPto->totalSize);
             free(respPto);
             respPto = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_FRESH_FRIENDLIST_RESPOND:{
+            Home::getInstance().getFriend()->handleLoadFriendList(recvPto);
+
             break;
         }
         default:
