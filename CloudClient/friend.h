@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "online.h"
+#include "privatemessage.h"
 
 namespace Ui {
 class Friend;
@@ -28,9 +29,12 @@ private slots:
 
     void on_deleteButton_clicked();
 
+    void on_messageButton_clicked();
+
 private:
     Ui::Friend *ui;
     QString searchUserName;
+    QList<PrivateMessage*> chatWidgets;
 };
 
 #endif // FRIEND_H

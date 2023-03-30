@@ -13,22 +13,18 @@ Friend::Friend(QWidget *parent) :
 {
 
     ui->setupUi(this);
-//ui->onlineFriend = new Online;
-    /*QVBoxLayout* mainVBL = new QVBoxLayout;
-    mainVBL->addLayout(ui->topHBL);
-    mainVBL->addLayout(ui->msgHBL);
 
-    mainVBL->addWidget(ui->onlineFriend);
-
-
-    setLayout(mainVBL);*/
     ui->onlineFriend->hide();
+    chatWidgets.clear();
     connect(ui->onlineButton, SIGNAL(clicked(bool)),this,SLOT(showOnline()));
 }
 
 Friend::~Friend()
 {
     delete ui;
+    for(int i=0; i<chatWidgets.size(); i++){
+        delete chatWidgets[i];
+    }
 }
 
 void Friend::handleShowOnlineResult(pto *recvPto)
@@ -119,4 +115,33 @@ void Friend::on_deleteButton_clicked()
     }else{
         QMessageBox::warning(this, "Delete Friend", "Please select a friend.");
     }
+}
+
+void Friend::on_messageButton_clicked()
+{
+    if(ui->friendList->currentItem()){
+        QString friendName = ui->friendList->currentItem()->text();
+        //check if there's a chat widget for this friend already or not
+        for(int i=0; i<chatWidgets.size(); i++){
+            if(chatWidgets[i]->getFriendName()==friendName){
+                if(chatWidgets[i]->isHidden()){
+                    chatWidgets[i]->show();
+                    qDebug()<<"show chatWidget for"<<friendName;
+                }else{
+                    chatWidgets[i]->raise();
+                    qDebug()<<"raise chatWidget for"<<friendName;
+                }
+                return;
+            }
+        }
+        PrivateMessage* newPM = new PrivateMessage();
+        newPM->init(CloudClient::getInstance().getLoginName(),friendName);
+        chatWidgets.append(newPM);
+        qDebug()<<"Successfully create a window PM for"<<friendName;
+        newPM->show();
+    }
+    else{
+        QMessageBox::warning(this, "Private Message", "Please select a friend.");
+    }
+
 }
