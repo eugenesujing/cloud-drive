@@ -185,6 +185,7 @@ void CloudClient::onRecv()
                 respond = NULL;
                 loginName.clear();
             }else{
+                //load friendlist after login
                 loadFriendList();
                 Home::getInstance().show();
                 hide();
@@ -247,6 +248,22 @@ void CloudClient::onRecv()
         case ENUM_MSG_TYPE_FRESH_FRIENDLIST_RESPOND:{
             Home::getInstance().getFriend()->handleLoadFriendList(recvPto);
 
+            break;
+        }
+        case ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND:{
+            char* respond = (char*)malloc(msgSize+1);
+            memset(respond,0,msgSize+1);
+            memcpy(respond,(char*)recvPto->data,msgSize);
+            if(recvPto->code != 1){
+                QMessageBox::warning(this, "Delete Friend", respond);
+            }else{
+                QMessageBox::information(this, "Delete Friend", respond);
+                //reload friendlist after deletion
+                loadFriendList();
+            }
+
+            free(respond);
+            respond = NULL;
             break;
         }
         default:

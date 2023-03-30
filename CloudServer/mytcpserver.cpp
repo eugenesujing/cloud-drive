@@ -23,14 +23,14 @@ void MyTcpServer::incomingConnection(qintptr handle)
     socketList.append(newSocket);
 }
 
-void MyTcpServer::resendAddFriendRequest(const char *searchName, pto *sendPTO)
+void MyTcpServer::resend(const char *name, pto *sendPTO)
 {
-    if(searchName == NULL || sendPTO == NULL){
+    if(name == NULL || sendPTO == NULL){
         return;
     }
     QList<MyTcpSocket*>::iterator iter = socketList.begin();
     for(;iter != socketList.end(); iter++){
-        if((*iter)->getName() == searchName){
+        if((*iter)->getName() == name){
             (*iter)->write((char*)sendPTO,sendPTO->totalSize);
             break;
         }
@@ -39,21 +39,6 @@ void MyTcpServer::resendAddFriendRequest(const char *searchName, pto *sendPTO)
     sendPTO = NULL;
 }
 
-void MyTcpServer::resendAddFriendResendRespond(const char *loginName, pto *sendPTO)
-{
-    if(loginName == NULL || sendPTO == NULL){
-        return;
-    }
-    QList<MyTcpSocket*>::iterator iter = socketList.begin();
-    for(;iter != socketList.end(); iter++){
-        if((*iter)->getName() == loginName){
-            (*iter)->write((char*)sendPTO,sendPTO->totalSize);
-            break;
-        }
-    }
-    free(sendPTO);
-    sendPTO = NULL;
-}
 
 void MyTcpServer::freeSocket(MyTcpSocket *mySocket)
 {

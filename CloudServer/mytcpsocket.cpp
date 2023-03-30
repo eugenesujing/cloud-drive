@@ -180,7 +180,7 @@ void MyTcpSocket::onRecv()
                 pto* resendPto = makePTO(0);
                 memcpy(resendPto,recvPto,sizeof (pto));
                 resendPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESEND_REQUEST;
-                MyTcpServer::getInstance().resendAddFriendRequest(searchName,resendPto);
+                MyTcpServer::getInstance().resend(searchName,resendPto);
                 respondMsg = QString("Your friend request has been sent to <%1>.").arg(searchName);
             }else if(ret==-1){
                 respondMsg = QString("Unknown Error.");
@@ -234,7 +234,7 @@ void MyTcpSocket::onRecv()
             respPto->code = ret;
             respPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
             strcpy(respPto->data, respondMsg.toStdString().c_str());
-            MyTcpServer::getInstance().resendAddFriendResendRespond(loginName, respPto);
+            MyTcpServer::getInstance().resend(loginName, respPto);
             break;
         }
         case ENUM_MSG_TYPE_FRESH_FRIENDLIST_REQUEST:{
@@ -262,7 +262,32 @@ void MyTcpSocket::onRecv()
 
             int ret = operDB::getInstance().handleDeleteFriend(friendName,loginName);
             QString respondMsg;
-            if(ret)
+            if(ret==1){
+                respondMsg = QString("You have successfully deleted <%1>.").arg(friendName);
+                QString resendMsg = QString("<%1> has deleted you.").arg(loginName);
+                pto* resendPTO = makePTO(resendMsg.size());
+                if(resendPTO==NULL){
+                    qDebug()<<"malloc for respPto failed.";
+                    break;
+                }
+                resendPTO->msgType = ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND;
+                resendPTO->code = 1;
+                memcpy(resendPTO->data, resendMsg.toStdString().c_str(),resendMsg.size());
+                MyTcpServer::getInstance().resend(friendName, resendPTO);
+            }else{
+                respondMsg = QString("System Error. Please try again.");
+            }
+            pto* respPto = makePTO(respondMsg.size());
+            if(respPto==NULL){
+                qDebug()<<"malloc for respPto failed.";
+                break;
+            }
+            respPto->msgType = ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND;
+            respPto->code = ret;
+            memcpy(respPto->data, respondMsg.toStdString().c_str(),respondMsg.size());
+            write((char*)respPto,respPto->totalSize);
+            free(respPto);
+            respPto = NULL;
             break;
         }
         default:

@@ -16,8 +16,7 @@ public:
     static MyTcpServer& getInstance();
 
     void incomingConnection(qintptr handle);
-    void resendAddFriendRequest(const char* searchName, pto* sendPTO);
-    void resendAddFriendResendRespond(const char* loginName, pto* sendPTO);
+    void resend(const char* name, pto* sendPTO);
 public slots:
     void freeSocket(MyTcpSocket* mySocket);
 private:
