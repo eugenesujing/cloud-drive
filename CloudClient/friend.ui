@@ -35,12 +35,12 @@
      <item row="1" column="0">
       <layout class="QHBoxLayout" name="msgHBL">
        <item>
-        <widget class="QLineEdit" name="lineEdit"/>
+        <widget class="QLineEdit" name="broadcastText"/>
        </item>
        <item>
-        <widget class="QPushButton" name="sendButton">
+        <widget class="QPushButton" name="broadcastPB">
          <property name="text">
-          <string>Send</string>
+          <string>Broadcast</string>
          </property>
         </widget>
        </item>
@@ -49,7 +49,7 @@
      <item row="0" column="0">
       <layout class="QHBoxLayout" name="topHBL">
        <item>
-        <widget class="QTextEdit" name="textEdit"/>
+        <widget class="QTextEdit" name="broadcastHistory"/>
        </item>
        <item>
         <widget class="QListWidget" name="friendList"/>

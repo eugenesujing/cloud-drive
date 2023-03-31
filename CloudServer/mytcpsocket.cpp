@@ -34,11 +34,12 @@ void MyTcpSocket::onRecv()
     unsigned int msgSize = ptoSize - sizeof (pto);
 
     pto* recvPto = makePTO(msgSize);
-
+    bool recvPtoFreed = false;
     if(recvPto!=NULL){
         recvPto->totalSize = ptoSize;
         this->read((char*)recvPto +sizeof(unsigned int), ptoSize-sizeof (unsigned int));
         qDebug()<<"msgType = "<<recvPto->msgType;
+
         //handle user request based on message type
         switch (recvPto->msgType) {
         case ENUM_MSG_TYPE_REGISTER_REQUEST:{
@@ -293,16 +294,17 @@ void MyTcpSocket::onRecv()
         case ENUM_MSG_TYPE_PRIVATE_MESSAGE_REQUEST:{
             char friendName[32] = {""};
             memcpy(friendName, recvPto->preData, 32);
-            pto* resendPTO = makePTO(recvPto->msgSize);
-            if(resendPTO==NULL){
-                qDebug()<<"malloc for resendPto failed.";
-                break;
-            }
 
-            memcpy(resendPTO, recvPto, recvPto->totalSize);
-            resendPTO->msgType = ENUM_MSG_TYPE_PRIVATE_MESSAGE_RESPOND;
-            MyTcpServer::getInstance().resend(friendName, resendPTO);
+            recvPto->msgType = ENUM_MSG_TYPE_PRIVATE_MESSAGE_RESPOND;
+            MyTcpServer::getInstance().resend(friendName, recvPto);
+            recvPtoFreed = true;
 
+            break;
+        }
+        case ENUM_MSG_TYPE_BROADCAST_REQUEST:{
+            recvPto->msgType = ENUM_MSG_TYPE_BROADCAST_RESPOND;
+            MyTcpServer::getInstance().broadcast(recvPto);
+            recvPtoFreed = true;
             break;
         }
         default:
@@ -310,9 +312,11 @@ void MyTcpSocket::onRecv()
         }
 
     }
+    if(recvPtoFreed == false){
+        free(recvPto);
+        recvPto = NULL;
+    }
 
-    free(recvPto);
-    recvPto = NULL;
 }
 
 //when the connection between client and server is off, we set account online status to 0 and emit signals for server to delete this socket

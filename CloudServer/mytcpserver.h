@@ -17,6 +17,7 @@ public:
 
     void incomingConnection(qintptr handle);
     void resend(const char* name, pto* sendPTO);
+    void broadcast(pto* broadcastPTO);
 public slots:
     void freeSocket(MyTcpSocket* mySocket);
 private:

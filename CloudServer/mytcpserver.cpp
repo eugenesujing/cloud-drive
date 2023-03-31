@@ -39,6 +39,19 @@ void MyTcpServer::resend(const char *name, pto *sendPTO)
     sendPTO = NULL;
 }
 
+void MyTcpServer::broadcast(pto *broadcastPTO)
+{
+    if(broadcastPTO == NULL){
+        return;
+    }
+    QList<MyTcpSocket*>::iterator iter = socketList.begin();
+    for(;iter != socketList.end(); iter++){
+        (*iter)->write((char*)broadcastPTO,broadcastPTO->totalSize);
+    }
+    free(broadcastPTO);
+    broadcastPTO = NULL;
+}
+
 
 void MyTcpServer::freeSocket(MyTcpSocket *mySocket)
 {

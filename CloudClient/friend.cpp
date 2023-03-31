@@ -70,7 +70,16 @@ PrivateMessage* Friend::initPrivateMessageWidget(const char *friendName)
     return newPM;
 }
 
-void Friend::newPrivateMessgae(const char* friendName,char *message)
+void Friend::newBroadcastMessgae(const char* friendName,char *message)
+{
+    if(friendName == NULL || message == NULL) return;
+    QString msgAndName = QString("%1:\n    %2").arg(friendName).arg(message);
+    ui->broadcastHistory->append(msgAndName.toStdString().c_str());
+    free(message);
+    message =NULL;
+}
+
+void Friend::newPrivateMessgae(const char *friendName, char *message)
 {
     if(friendName == NULL || message == NULL) return;
     PrivateMessage* pm = initPrivateMessageWidget(friendName);
@@ -163,4 +172,25 @@ void Friend::on_messageButton_clicked()
         QMessageBox::warning(this, "Private Message", "Please select a friend.");
     }
 
+}
+
+void Friend::on_broadcastPB_clicked()
+{
+    QString msg = ui->broadcastText->text();
+    ui->broadcastText->clear();
+    if(msg.size() != 0){
+        pto* sendPTO = makePTO(msg.size());
+        if(sendPTO){
+            sendPTO->msgType = ENUM_MSG_TYPE_BROADCAST_REQUEST;
+            memcpy(sendPTO->preData ,CloudClient::getInstance().getLoginName().toStdString().c_str(),32);
+            memcpy(sendPTO->data, msg.toStdString().c_str(), msg.size());
+            CloudClient::getInstance().getSocket().write((char*)sendPTO, sendPTO->totalSize);
+            free(sendPTO);
+            sendPTO = NULL;
+        }else{
+            qDebug()<<"malloc for broadcastButton failed";
+        }
+    }else{
+        QMessageBox::warning(this, "Broadcast", "Message is empty.");
+    }
 }

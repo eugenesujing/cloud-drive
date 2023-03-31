@@ -22,6 +22,7 @@ public:
     PrivateMessage* initPrivateMessageWidget(const char* friendName);
 
     void newPrivateMessgae(const char* friendName,char* message);
+    void newBroadcastMessgae(const char* friendName,char* message);
 public slots:
     void showOnline();
 private slots:
@@ -34,6 +35,8 @@ private slots:
     void on_deleteButton_clicked();
 
     void on_messageButton_clicked();
+
+    void on_broadcastPB_clicked();
 
 private:
     Ui::Friend *ui;

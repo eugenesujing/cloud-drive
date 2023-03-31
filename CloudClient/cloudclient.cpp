@@ -247,7 +247,6 @@ void CloudClient::onRecv()
         }
         case ENUM_MSG_TYPE_FRESH_FRIENDLIST_RESPOND:{
             Home::getInstance().getFriend()->handleLoadFriendList(recvPto);
-
             break;
         }
         case ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND:{
@@ -274,6 +273,17 @@ void CloudClient::onRecv()
             memcpy(friendName, recvPto->preData+32, 32);
 
             Home::getInstance().getFriend()->newPrivateMessgae(friendName, msg);
+            break;
+        }
+        case ENUM_MSG_TYPE_BROADCAST_RESPOND:{
+            char friendName[32] = {""};
+            char* msg = (char*)malloc(recvPto->msgSize+1);
+            memset(msg, 0, recvPto->msgSize+1);
+            memcpy(msg, recvPto->data, recvPto->msgSize);
+            memcpy(friendName, recvPto->preData, 32);
+
+            Home::getInstance().getFriend()->newBroadcastMessgae(friendName, msg);
+            break;
         }
         default:
             break;
