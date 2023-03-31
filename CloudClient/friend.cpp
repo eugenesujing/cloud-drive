@@ -45,6 +45,42 @@ void Friend::handleLoadFriendList(pto *recvPto)
     }
 }
 
+//init a private message widget for friend, "friendName" is the name of the friend
+PrivateMessage* Friend::initPrivateMessageWidget(const char *friendName)
+{
+    if(friendName == NULL) return NULL;
+    //check if there's a chat widget for this friend already or not
+    for(int i=0; i<chatWidgets.size(); i++){
+        if(chatWidgets[i]->getFriendName()==friendName){
+            if(chatWidgets[i]->isHidden()){
+                chatWidgets[i]->show();
+                qDebug()<<"show chatWidget for"<<friendName;
+            }else{
+                chatWidgets[i]->raise();
+                qDebug()<<"raise chatWidget for"<<friendName;
+            }
+            return chatWidgets[i];
+        }
+    }
+    PrivateMessage* newPM = new PrivateMessage();
+    newPM->init(CloudClient::getInstance().getLoginName(),friendName);
+    chatWidgets.append(newPM);
+    qDebug()<<"Successfully create a window PM for"<<friendName;
+    newPM->show();
+    return newPM;
+}
+
+void Friend::newPrivateMessgae(const char* friendName,char *message)
+{
+    if(friendName == NULL || message == NULL) return;
+    PrivateMessage* pm = initPrivateMessageWidget(friendName);
+    if(pm == NULL) return;
+    QString msgAndName = QString("%1:\n    %2").arg(friendName).arg(message);
+    pm->addNewMessage(msgAndName);
+    free(message);
+    message =NULL;
+}
+
 void Friend::showOnline()
 {
     if(ui->onlineFriend->isHidden()){
@@ -121,24 +157,7 @@ void Friend::on_messageButton_clicked()
 {
     if(ui->friendList->currentItem()){
         QString friendName = ui->friendList->currentItem()->text();
-        //check if there's a chat widget for this friend already or not
-        for(int i=0; i<chatWidgets.size(); i++){
-            if(chatWidgets[i]->getFriendName()==friendName){
-                if(chatWidgets[i]->isHidden()){
-                    chatWidgets[i]->show();
-                    qDebug()<<"show chatWidget for"<<friendName;
-                }else{
-                    chatWidgets[i]->raise();
-                    qDebug()<<"raise chatWidget for"<<friendName;
-                }
-                return;
-            }
-        }
-        PrivateMessage* newPM = new PrivateMessage();
-        newPM->init(CloudClient::getInstance().getLoginName(),friendName);
-        chatWidgets.append(newPM);
-        qDebug()<<"Successfully create a window PM for"<<friendName;
-        newPM->show();
+        initPrivateMessageWidget(friendName.toStdString().c_str());
     }
     else{
         QMessageBox::warning(this, "Private Message", "Please select a friend.");

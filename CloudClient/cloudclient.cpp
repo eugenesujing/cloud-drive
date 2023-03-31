@@ -266,6 +266,15 @@ void CloudClient::onRecv()
             respond = NULL;
             break;
         }
+        case ENUM_MSG_TYPE_PRIVATE_MESSAGE_RESPOND:{
+            char friendName[32] = {""};
+            char* msg = (char*)malloc(recvPto->msgSize+1);
+            memset(msg, 0, recvPto->msgSize+1);
+            memcpy(msg, recvPto->data, recvPto->msgSize);
+            memcpy(friendName, recvPto->preData+32, 32);
+
+            Home::getInstance().getFriend()->newPrivateMessgae(friendName, msg);
+        }
         default:
             break;
         }

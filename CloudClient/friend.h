@@ -18,6 +18,10 @@ public:
     ~Friend();
     void handleShowOnlineResult(pto* recvPto);
     void handleLoadFriendList(pto* recvPto);
+    //init a private message widget for friend, "friendName" is the name of the friend
+    PrivateMessage* initPrivateMessageWidget(const char* friendName);
+
+    void newPrivateMessgae(const char* friendName,char* message);
 public slots:
     void showOnline();
 private slots:

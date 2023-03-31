@@ -290,11 +290,27 @@ void MyTcpSocket::onRecv()
             respPto = NULL;
             break;
         }
+        case ENUM_MSG_TYPE_PRIVATE_MESSAGE_REQUEST:{
+            char friendName[32] = {""};
+            memcpy(friendName, recvPto->preData, 32);
+            pto* resendPTO = makePTO(recvPto->msgSize);
+            if(resendPTO==NULL){
+                qDebug()<<"malloc for resendPto failed.";
+                break;
+            }
+
+            memcpy(resendPTO, recvPto, recvPto->totalSize);
+            resendPTO->msgType = ENUM_MSG_TYPE_PRIVATE_MESSAGE_RESPOND;
+            MyTcpServer::getInstance().resend(friendName, resendPTO);
+
+            break;
+        }
         default:
             break;
         }
 
     }
+
     free(recvPto);
     recvPto = NULL;
 }

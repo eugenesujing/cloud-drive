@@ -16,6 +16,7 @@ public:
     ~PrivateMessage();
     void init(QString lName, QString fName);
     QString getFriendName();
+    void addNewMessage(QString msg);
 private slots:
     void on_msgSendPB_clicked();
 
