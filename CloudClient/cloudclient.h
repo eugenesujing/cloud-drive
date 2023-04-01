@@ -21,6 +21,7 @@ public:
     QTcpSocket& getSocket();
     QString getLoginName()const;
     void loadFriendList();
+    QString getCurPath()const;
 public slots:
     //Inform user when client is connected to server successfully
     void showConnected();
@@ -41,6 +42,7 @@ private:
 
     QTcpSocket mySocket;
     QString loginName;
+    QString curPath;
     //Load config from resource file
     void loadConfig();
 

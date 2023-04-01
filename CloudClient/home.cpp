@@ -6,13 +6,13 @@ Home::Home(QWidget *parent) : QWidget(parent)
 {
     wlist = new QListWidget(this);
     wlist->addItem("Friends");
-    wlist->addItem("Resource");
+    wlist->addItem("Files");
 
     friendWidget = new Friend;
-    resourceWidget = new Resource;
+    filesWidget = new Files;
     QStackedWidget* sWidget = new QStackedWidget;
     sWidget->addWidget(friendWidget);
-    sWidget->addWidget(resourceWidget);
+    sWidget->addWidget(filesWidget);
 
     QHBoxLayout* mainLayout = new QHBoxLayout;
     mainLayout->addWidget(wlist,1);

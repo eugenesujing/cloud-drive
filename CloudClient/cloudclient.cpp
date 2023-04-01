@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QHostAddress>
 #include <QString>
+#include <QDir>
 
 CloudClient::CloudClient(QWidget *parent)
     : QWidget(parent)
@@ -83,23 +84,11 @@ void CloudClient::loadFriendList()
 
 }
 
-
-/*void CloudClient::on_send_button_clicked()
+QString CloudClient::getCurPath() const
 {
-    QString msgToBeSent = ui->lineEdit->text();
-    if(!msgToBeSent.isEmpty()){
-        pto* newPto = makePTO(msgToBeSent.size());
-        if(newPto!=NULL){
-            newPto->totalSize = sizeof (pto) + msgToBeSent.size();
-            newPto->msgSize = msgToBeSent.size();
-            memcpy(newPto->data,msgToBeSent.toStdString().c_str(),msgToBeSent.size());
-            qDebug()<<newPto->data;
-            mySocket.write((char*)newPto,newPto->totalSize);
-            free(newPto);
-            newPto = NULL;
-        }
-    }
-}*/
+    return curPath;
+}
+
 
 void CloudClient::on_login_button_clicked()
 {
@@ -190,7 +179,10 @@ void CloudClient::onRecv()
                 Home::getInstance().show();
                 hide();
                 qDebug()<<"Login successfully.";
+                //set curPath as user's personal folder, create one if not exists
+                curPath = QString("./%1").arg(loginName);
             }
+
             break;
         }
         case ENUM_MSG_TYPE_SHOW_ONLINE_RESPOND:{
@@ -283,6 +275,19 @@ void CloudClient::onRecv()
             memcpy(friendName, recvPto->preData, 32);
 
             Home::getInstance().getFriend()->newBroadcastMessgae(friendName, msg);
+            break;
+        }
+        case ENUM_MSG_TYPE_NEW_FOLDER_RESPOND:{
+            char* respond = (char*)malloc(msgSize+1);
+            memset(respond,0,msgSize+1);
+            memcpy(respond,(char*)recvPto->data,msgSize);
+            if(recvPto->code != 1){
+                QMessageBox::warning(this, "New Folder", respond);
+            }else{
+                QMessageBox::information(this, "New Folder", respond);
+            }
+            free(respond);
+            respond = NULL;
             break;
         }
         default:

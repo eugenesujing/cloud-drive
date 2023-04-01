@@ -1,9 +1,10 @@
 #include "mytcpsocket.h"
 #include "mytcpserver.h"
-#include "protocol.h"
+
 #include "operdb.h"
 #include <QDebug>
 #include <QMessageBox>
+#include <QDir>
 
 MyTcpSocket::MyTcpSocket()
 {
@@ -53,6 +54,10 @@ void MyTcpSocket::onRecv()
             qDebug()<<ret;
             if(ret==1){
                 respondMsg = QString("Your new account <%1> has been registered successfully!\0").arg(name);
+                QString curPath = QString("./%1").arg(name);
+                QDir dir;
+                dir.mkdir(curPath);
+
             }else if(ret==0){
                 respondMsg = QString("User name <%1> has been registered by another user. Please use another name!\0").arg(name);
 
@@ -61,19 +66,8 @@ void MyTcpSocket::onRecv()
                 qDebug()<<"Name or password is empty! Cannot handle register request.";
             }
             qDebug()<<respondMsg;
-            pto* respPto = makePTO(respondMsg.size());
-            if(respPto==NULL){
-                qDebug()<<"malloc for respPto failed.";
-                break;
-            }
 
-            //respPto->totalSize = sizeof(pto) + respondMsg.size();
-            respPto->msgType = ENUM_MSG_TYPE_REGISTER_RESPOND;
-            strcpy(respPto->data, respondMsg.toStdString().c_str());
-            respPto->code = ret;
-            write((char*)respPto, respPto->totalSize);
-            free(respPto);
-            respPto = NULL;
+            respond(respondMsg, ret,  ENUM_MSG_TYPE_REGISTER_RESPOND);
             break;
         }
         case ENUM_MSG_TYPE_LOGIN_REQUEST:{
@@ -100,18 +94,7 @@ void MyTcpSocket::onRecv()
                 qDebug()<<"malloc for respPto failed.";
                 break;
             }
-            qDebug()<<"Successfully makePTO for login request";
-            //respPto->totalSize = sizeof(pto) + respondMsg.size();
-            respPto->msgType = ENUM_MSG_TYPE_LOGIN_RESPOND;
-            qDebug()<<"Successfully makePTO for login request";
-            strcpy(respPto->data, respondMsg.toStdString().c_str());
-            qDebug()<<"Successfully makePTO for login request";
-            respPto->code = ret;
-            qDebug()<<"respPto->totoalSize = "<<respPto->totalSize;
-            write((char*)respPto, respPto->totalSize);
-            qDebug()<<"Successfully sent msg for login request";
-            free(respPto);
-            respPto = NULL;
+            respond(respondMsg, ret,  ENUM_MSG_TYPE_LOGIN_RESPOND);
             break;
         }
         case ENUM_MSG_TYPE_SHOW_ONLINE_REQUEST:{
@@ -151,19 +134,7 @@ void MyTcpSocket::onRecv()
                 respondMsg = QString("Account <%1> does not exist!").arg(name);
             }
             qDebug()<<respondMsg;
-            pto* respPto = makePTO(respondMsg.size());
-            if(respPto==NULL){
-                qDebug()<<"malloc for respPto failed.";
-                break;
-            }
-
-            //respPto->totalSize = sizeof(pto) + respondMsg.size();
-            respPto->msgType = ENUM_MSG_TYPE_SEARCH_USER_RESPOND;
-            strcpy(respPto->data, respondMsg.toStdString().c_str());
-            respPto->code = ret;
-            write((char*)respPto, respPto->totalSize);
-            free(respPto);
-            respPto = NULL;
+            respond(respondMsg, ret, ENUM_MSG_TYPE_SEARCH_USER_RESPOND);
             break;
         }
         case ENUM_MSG_TYPE_ADD_FRIEND_REQUEST:{
@@ -191,19 +162,7 @@ void MyTcpSocket::onRecv()
                 respondMsg = QString("Account <%1> does not exist.").arg(searchName);
             }
             qDebug()<<respondMsg;
-            pto* respPto = makePTO(respondMsg.size());
-            if(respPto==NULL){
-                qDebug()<<"malloc for respPto failed.";
-                break;
-            }
-
-            //respPto->totalSize = sizeof(pto) + respondMsg.size();
-            respPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
-            strcpy(respPto->data, respondMsg.toStdString().c_str());
-            respPto->code = ret;
-            write((char*)respPto, respPto->totalSize);
-            free(respPto);
-            respPto = NULL;
+            respond(respondMsg, ret, ENUM_MSG_TYPE_ADD_FRIEND_RESPOND);
             break;
         }
         case ENUM_MSG_TYPE_ADD_FRIEND_RESEND_RESPOND:{
@@ -278,17 +237,7 @@ void MyTcpSocket::onRecv()
             }else{
                 respondMsg = QString("System Error. Please try again.");
             }
-            pto* respPto = makePTO(respondMsg.size());
-            if(respPto==NULL){
-                qDebug()<<"malloc for respPto failed.";
-                break;
-            }
-            respPto->msgType = ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND;
-            respPto->code = ret;
-            memcpy(respPto->data, respondMsg.toStdString().c_str(),respondMsg.size());
-            write((char*)respPto,respPto->totalSize);
-            free(respPto);
-            respPto = NULL;
+            respond(respondMsg, ret, ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND);
             break;
         }
         case ENUM_MSG_TYPE_PRIVATE_MESSAGE_REQUEST:{
@@ -307,6 +256,39 @@ void MyTcpSocket::onRecv()
             recvPtoFreed = true;
             break;
         }
+        case ENUM_MSG_TYPE_NEW_FOLDER_REQUEST:{
+            char loginName[32] = {""};
+            char newFolderName[32] = {""};
+            memcpy(loginName, recvPto->preData, 32);
+            memcpy(newFolderName, recvPto->preData+32, 32);
+            char* curPath = (char*)malloc(recvPto->msgSize+1);
+            memset(curPath, 0, recvPto->msgSize+1);
+            memcpy(curPath, recvPto->data, recvPto->msgSize);
+            QDir dir(curPath);
+
+            QString respondMsg;
+            int ret = 0;
+            if(dir.exists()){
+                if(dir.exists(newFolderName)){
+                    respondMsg = QString("This destination already contains a folder called '%1'.").arg(newFolderName);
+                }else{
+                    if(dir.mkdir(newFolderName)){
+                        respondMsg = QString("Folder '%1' has been created successfuly.").arg(newFolderName);
+                        ret = 1;
+                    }else{
+                        respondMsg = QString("Failed to create folder '%1'. Please try again.").arg(newFolderName);
+                        ret = 2;
+                    }
+                }
+            }else{
+                ret = -1;
+                respondMsg = QString("System cannot find '%1'. Please try again.").arg(curPath);
+            }
+            respond(respondMsg, ret, ENUM_MSG_TYPE_NEW_FOLDER_RESPOND);
+            free(curPath);
+            curPath = NULL;
+            break;
+        }
         default:
             break;
         }
@@ -319,6 +301,7 @@ void MyTcpSocket::onRecv()
 
 }
 
+
 //when the connection between client and server is off, we set account online status to 0 and emit signals for server to delete this socket
 void MyTcpSocket::socektOff()
 {
@@ -329,4 +312,20 @@ void MyTcpSocket::socektOff()
     qDebug()<<"SocketName = "<<socketName;
     emit clientOff(this);
     qDebug()<<"Successfully emit clientOff()";
+}
+
+void MyTcpSocket::respond(QString respondMsg, int ret, ENUM_MSG_TYPE type)
+{
+    pto* respPto = makePTO(respondMsg.size());
+    if(respPto==NULL){
+        qDebug()<<"malloc for respPto failed.";
+        return;
+    }
+    qDebug()<<respondMsg;
+    respPto->msgType = type;
+    respPto->code = ret;
+    memcpy(respPto->data, respondMsg.toStdString().c_str(),respondMsg.size());
+    write((char*)respPto,respPto->totalSize);
+    free(respPto);
+    respPto = NULL;
 }

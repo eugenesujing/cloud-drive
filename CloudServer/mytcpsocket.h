@@ -2,7 +2,7 @@
 #define MYTCPSOCKET_H
 
 #include <QTcpSocket>
-
+#include "protocol.h"
 
 class MyTcpSocket : public QTcpSocket
 {
@@ -20,6 +20,7 @@ signals:
     void clientOff(MyTcpSocket*);
 private:
     QString socketName;
+    void respond(QString respondMsg, int ret, ENUM_MSG_TYPE type);
 };
 
 #endif // MYTCPSOCKET_H

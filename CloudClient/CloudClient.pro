@@ -16,26 +16,27 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    files.cpp \
     friend.cpp \
     home.cpp \
     main.cpp \
     cloudclient.cpp \
     online.cpp \
     privatemessage.cpp \
-    protocol.cpp \
-    resource.cpp
+    protocol.cpp
 
 HEADERS += \
     cloudclient.h \
+    files.h \
     friend.h \
     home.h \
     online.h \
     privatemessage.h \
-    protocol.h \
-    resource.h
+    protocol.h
 
 FORMS += \
     cloudclient.ui \
+    files.ui \
     friend.ui \
     online.ui \
     privatemessage.ui

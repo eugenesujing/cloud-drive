@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QListWidget>
 #include "friend.h"
-#include "resource.h"
+#include "files.h"
 
 class Home : public QWidget
 {
@@ -18,7 +18,7 @@ signals:
 private:
     QListWidget* wlist;
     Friend* friendWidget;
-    Resource* resourceWidget;
+    Files* filesWidget;
 };
 
 #endif // HOME_H
