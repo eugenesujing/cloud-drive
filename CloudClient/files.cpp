@@ -1,6 +1,5 @@
 #include "files.h"
 #include "ui_files.h"
-#include  "protocol.h"
 #include "cloudclient.h"
 #include <QInputDialog>
 #include <QMessageBox>
@@ -14,7 +13,14 @@ Files::Files(QWidget *parent) :
 
 Files::~Files()
 {
+    deleteListItem();
     delete ui;
+}
+
+Files &Files::getInstance()
+{
+    static Files file;
+    return file;
 }
 
 void Files::on_newFolderPB_clicked()
@@ -44,4 +50,58 @@ void Files::on_newFolderPB_clicked()
         QMessageBox::warning(qid,  "Empty file name", "File name cannot be empty");
     }
     delete qid;
+}
+
+void Files::on_freshPB_clicked()
+{
+    loadFiles();
+}
+
+void Files::deleteListItem()
+{
+    int count = ui->listWidget->count();
+    QListWidgetItem* item = NULL;
+
+    for(int i=0; i<count; i++){
+        item = ui->listWidget->item(count-i-1);
+        ui->listWidget->removeItemWidget(item);
+        delete item;
+    }
+}
+
+void Files::loadFiles()
+{
+    QString curPath = CloudClient::getInstance().getCurPath();
+    qDebug()<<"curPath="<<curPath;
+    pto* sendPto = makePTO(curPath.size()+1);
+    if(sendPto==NULL){
+        qDebug()<<"malloc for sendPto failed on on_newFolderPB_clicked()";
+        return;
+    }
+    memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
+    sendPto->msgType = ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST;
+    CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
+}
+
+void Files::updateFileList(pto *recvPto)
+{
+    if(recvPto == NULL){
+        qDebug()<<"recvPto is nullptr";
+    }
+    //clear all existing listItem and free memory before loading new list
+    deleteListItem();
+    int fileCount = recvPto->msgSize/(sizeof(fileInfo));
+    fileInfo* pInfo = NULL;
+    //starting from 2 to ignore './'  and '../'
+    for(int i=2; i<fileCount; i++){
+        pInfo = (fileInfo*)(recvPto->data) +i;
+        QListWidgetItem* listItem = new QListWidgetItem;
+        listItem->setText(pInfo->fileName);
+        if(pInfo->fileType==0){
+            listItem->setIcon(QIcon(QPixmap(":/fileType/dir.jpeg")));
+        }else if(pInfo->fileType==1){
+            listItem->setIcon(QIcon(QPixmap(":/fileType/file.jpeg")));
+        }
+        ui->listWidget->addItem(listItem);
+    }
 }

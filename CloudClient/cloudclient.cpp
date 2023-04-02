@@ -181,6 +181,7 @@ void CloudClient::onRecv()
                 qDebug()<<"Login successfully.";
                 //set curPath as user's personal folder, create one if not exists
                 curPath = QString("./%1").arg(loginName);
+                Home::getInstance().getFiles()->loadFiles();
             }
 
             break;
@@ -290,6 +291,11 @@ void CloudClient::onRecv()
             respond = NULL;
             break;
         }
+        case ENUM_MSG_TYPE_LOAD_FOLDER_RESPOND:{
+            Home::getInstance().getFiles()->updateFileList(recvPto);
+            break;
+        }
+
         default:
             break;
         }

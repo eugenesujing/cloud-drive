@@ -33,3 +33,8 @@ Friend *Home::getFriend() const
 {
     return friendWidget;
 }
+
+Files *Home::getFiles() const
+{
+    return filesWidget;
+}

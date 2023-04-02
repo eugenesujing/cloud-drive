@@ -13,6 +13,7 @@ public:
     explicit Home(QWidget *parent = nullptr);
     static Home& getInstance();
     Friend* getFriend()const;
+    Files* getFiles()const;
 signals:
 
 private:

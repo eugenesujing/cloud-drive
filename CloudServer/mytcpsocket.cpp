@@ -289,6 +289,35 @@ void MyTcpSocket::onRecv()
             curPath = NULL;
             break;
         }
+        case ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST:{
+            char* curPath = new char[recvPto->msgSize];
+            memcpy(curPath, recvPto->data, recvPto->msgSize);
+            qDebug()<<"curPath="<<curPath;
+            QDir dir(curPath);
+            QFileInfoList fileInfoList = dir.entryInfoList();
+            int fileCount = fileInfoList.size();
+            pto* respPto = makePTO(fileCount*sizeof(fileInfo));
+            if(respPto == NULL){
+                qDebug()<<"malloc failed for ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST";
+                break;
+            }
+            respPto->msgType = ENUM_MSG_TYPE_LOAD_FOLDER_RESPOND;
+            fileInfo* pInfo = NULL;
+            for(int i=0; i <fileCount; i++){
+                pInfo = (fileInfo*)(respPto->data) +i;
+                memcpy(pInfo->fileName,fileInfoList[i].fileName().toStdString().c_str(),fileInfoList[i].fileName().size());
+                if(fileInfoList[i].isDir()){
+                    pInfo->fileType = 0;
+                }else if(fileInfoList[i].isFile()){
+                    pInfo->fileType = 1;
+                }
+            }
+            write((char*)respPto, respPto->totalSize);
+            delete [] curPath;
+            free(respPto);
+            respPto = NULL;
+            break;
+        }
         default:
             break;
         }

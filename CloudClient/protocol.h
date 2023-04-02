@@ -39,8 +39,16 @@ enum ENUM_MSG_TYPE{
 
     ENUM_MSG_TYPE_NEW_FOLDER_REQUEST,
     ENUM_MSG_TYPE_NEW_FOLDER_RESPOND,
+
+    ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST,
+    ENUM_MSG_TYPE_LOAD_FOLDER_RESPOND,
     ENUM_MSG_TYPE_MAX = 0x00ffffff
 };
+
+typedef struct fileInfo{
+    char fileName[32];
+    int fileType;
+}fileInfo;
 
 typedef struct pto{
     unsigned int totalSize;//total size of the protocol
