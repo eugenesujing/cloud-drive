@@ -57,6 +57,13 @@ void Files::on_freshPB_clicked()
     loadFiles();
 }
 
+void Files::on_switch_to_files_widget(int currRow)
+{   if(currRow == 1){
+        loadFiles();
+    }
+
+}
+
 void Files::deleteListItem()
 {
     int count = ui->listWidget->count();
@@ -71,6 +78,7 @@ void Files::deleteListItem()
 
 void Files::loadFiles()
 {
+    qDebug()<<"in loadFiles()";
     QString curPath = CloudClient::getInstance().getCurPath();
     qDebug()<<"curPath="<<curPath;
     pto* sendPto = makePTO(curPath.size()+1);
@@ -78,13 +86,17 @@ void Files::loadFiles()
         qDebug()<<"malloc for sendPto failed on on_newFolderPB_clicked()";
         return;
     }
+    qDebug()<<"i'm here";
     memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
     sendPto->msgType = ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST;
+    qDebug()<<"sendPto->msgType = "<<sendPto->msgType;
     CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
+    qDebug()<<"snedPto->data"<<sendPto->totalSize;
 }
 
 void Files::updateFileList(pto *recvPto)
 {
+    qDebug()<<"in updateFileList";
     if(recvPto == NULL){
         qDebug()<<"recvPto is nullptr";
     }
@@ -103,5 +115,25 @@ void Files::updateFileList(pto *recvPto)
             listItem->setIcon(QIcon(QPixmap(":/fileType/file.jpeg")));
         }
         ui->listWidget->addItem(listItem);
+    }
+}
+
+void Files::on_deletePB_clicked()
+{
+    QListWidgetItem* listItem  = ui->listWidget->currentItem();
+    if(listItem == NULL){
+        QMessageBox::warning(this, "Delete file", "Please select a file");
+    }else{
+        QString currFile = listItem->text();
+        QString curPath = CloudClient::getInstance().getCurPath();
+        pto* sendPto = makePTO(curPath.size()+1);
+        if(sendPto==NULL){
+            qDebug()<<"malloc for sendPto failed on on_deletePB_clicked";
+            return;
+        }
+        memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
+        memcpy(sendPto->preData, currFile.toStdString().c_str(), currFile.size());
+        sendPto->msgType = ENUM_MSG_TYPE_DELETE_FILE_REQUEST;
+        CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
     }
 }

@@ -137,6 +137,7 @@ void CloudClient::on_register_button_clicked()
 
 void CloudClient::onRecv()
 {
+    qDebug()<<"Received a new message";
     unsigned int ptoSize = 0;
     //get size of pto first
     mySocket.read((char*)&ptoSize, sizeof(unsigned int));
@@ -147,7 +148,7 @@ void CloudClient::onRecv()
         recvPto->totalSize = ptoSize;
         qDebug()<<"totalSize="<<recvPto->totalSize;
         mySocket.read((char*)recvPto +sizeof(unsigned int), recvPto->totalSize-sizeof (unsigned int));
-
+        qDebug()<<"msgType = "<<recvPto->msgType;
         //handle user request based on message type
         switch (recvPto->msgType) {
         case ENUM_MSG_TYPE_REGISTER_RESPOND:{
@@ -176,12 +177,11 @@ void CloudClient::onRecv()
             }else{
                 //load friendlist after login
                 loadFriendList();
+                //set curPath as user's personal folder
+                curPath = QString("./%1").arg(loginName);
                 Home::getInstance().show();
                 hide();
                 qDebug()<<"Login successfully.";
-                //set curPath as user's personal folder, create one if not exists
-                curPath = QString("./%1").arg(loginName);
-                Home::getInstance().getFiles()->loadFiles();
             }
 
             break;
@@ -286,6 +286,7 @@ void CloudClient::onRecv()
                 QMessageBox::warning(this, "New Folder", respond);
             }else{
                 QMessageBox::information(this, "New Folder", respond);
+                Home::getInstance().getFiles()->loadFiles();
             }
             free(respond);
             respond = NULL;
@@ -295,7 +296,20 @@ void CloudClient::onRecv()
             Home::getInstance().getFiles()->updateFileList(recvPto);
             break;
         }
-
+        case ENUM_MSG_TYPE_DELETE_FILE_RESPOND:{
+            char* respond = (char*)malloc(msgSize+1);
+            memset(respond,0,msgSize+1);
+            memcpy(respond,(char*)recvPto->data,msgSize);
+            if(recvPto->code != 1){
+                QMessageBox::warning(this, "Delete File", respond);
+            }else{
+                QMessageBox::information(this, "Delete File", respond);
+                Home::getInstance().getFiles()->loadFiles();
+            }
+            free(respond);
+            respond = NULL;
+            break;
+        }
         default:
             break;
         }

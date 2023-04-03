@@ -21,6 +21,7 @@ Home::Home(QWidget *parent) : QWidget(parent)
     setLayout(mainLayout);
 
     connect(wlist, SIGNAL(currentRowChanged(int)), sWidget, SLOT(setCurrentIndex(int)));
+    connect(wlist, SIGNAL(currentRowChanged(int)), filesWidget, SLOT(on_switch_to_files_widget(int)));
 }
 
 Home &Home::getInstance()

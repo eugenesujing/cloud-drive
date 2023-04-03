@@ -30,6 +30,7 @@ QString MyTcpSocket::getName() const
 
 void MyTcpSocket::onRecv()
 {
+    qDebug()<<"Received a new message";
     unsigned int ptoSize = 0;
     this->read((char*)&ptoSize, sizeof(unsigned int));
     unsigned int msgSize = ptoSize - sizeof (pto);
@@ -316,6 +317,34 @@ void MyTcpSocket::onRecv()
             delete [] curPath;
             free(respPto);
             respPto = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_DELETE_FILE_REQUEST:{
+            char* curPath = new char[recvPto->msgSize];
+            memcpy(curPath, recvPto->data, recvPto->msgSize);
+            qDebug()<<"curPath="<<curPath;
+            char fileName[32] = {""};
+            memcpy(fileName, recvPto->preData, 32);
+            QString fullPath = QString("%1/%2").arg(curPath).arg(fileName);
+
+            QFileInfo fileInfo(fullPath);
+            int ret = 0;
+            if(fileInfo.isDir()){
+                QDir dir(fullPath);
+                ret = dir.removeRecursively();
+            }else if(fileInfo.isFile()){
+                QFile file(fullPath);
+                ret = file.remove();
+            }
+            QString respondMsg;
+            if(ret==1){
+                respondMsg = QString("File '%1' has been deleted").arg(fileName);
+            }else{
+                respondMsg = QString("Failed to delete file '%1'. Please try again.").arg(fileName);
+            }
+            respond(respondMsg, ret, ENUM_MSG_TYPE_DELETE_FILE_RESPOND);
+            free(curPath);
+            curPath = NULL;
             break;
         }
         default:

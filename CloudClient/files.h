@@ -20,11 +20,13 @@ public:
     void loadFiles();
     void updateFileList(pto* recvPto);
 private slots:
-    void on_pushButton_5_clicked();
-
     void on_newFolderPB_clicked();
 
     void on_freshPB_clicked();
+
+    void on_switch_to_files_widget(int currRow);
+
+    void on_deletePB_clicked();
 
 private:
     Ui::Files *ui;
