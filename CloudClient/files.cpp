@@ -137,3 +137,28 @@ void Files::on_deletePB_clicked()
         CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
     }
 }
+
+void Files::on_renamePB_clicked()
+{
+    QListWidgetItem* listItem  = ui->listWidget->currentItem();
+    if(listItem == NULL){
+        QMessageBox::warning(this, "Rename file", "Please select a file");
+    }else{
+        QString currFile = listItem->text();
+        QString curPath = CloudClient::getInstance().getCurPath();
+        QString newFileName = QInputDialog::getText(this, "Rename file", "New Filename:");
+        if(newFileName.size()>32){
+            QMessageBox::warning(this, "Rename file", "File name must be less than 32 characters");
+        }
+        pto* sendPto = makePTO(curPath.size()+1);
+        if(sendPto==NULL){
+            qDebug()<<"malloc for sendPto failed on on_renamePB_clicked()";
+            return;
+        }
+        memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
+        memcpy(sendPto->preData, currFile.toStdString().c_str(), currFile.size());
+        memcpy(sendPto->preData +32, newFileName.toStdString().c_str(), newFileName.size());
+        sendPto->msgType = ENUM_MSG_TYPE_RENAME_FILE_REQUEST;
+        CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
+    }
+}

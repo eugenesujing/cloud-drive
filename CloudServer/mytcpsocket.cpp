@@ -343,8 +343,33 @@ void MyTcpSocket::onRecv()
                 respondMsg = QString("Failed to delete file '%1'. Please try again.").arg(fileName);
             }
             respond(respondMsg, ret, ENUM_MSG_TYPE_DELETE_FILE_RESPOND);
-            free(curPath);
-            curPath = NULL;
+            delete[] curPath;
+            break;
+        }
+        case ENUM_MSG_TYPE_RENAME_FILE_REQUEST:{
+            char* curPath = new char[recvPto->msgSize];
+            memcpy(curPath, recvPto->data, recvPto->msgSize);
+            char fileName[32] = {""};
+            memcpy(fileName, recvPto->preData, 32);
+            char newFileName[32] = {""};
+            memcpy(newFileName, recvPto->preData+32, 32);
+            QString fullPath = QString("%1/%2").arg(curPath).arg(fileName);
+            QString newFullPath = QString("%1/%2").arg(curPath).arg(newFileName);
+
+            QDir dir(curPath);
+            int ret = dir.rename(fullPath, newFullPath);
+            QString respondMsg;
+            if(ret == 1){
+                respondMsg = QString("Rename successfully!");
+            }else if(dir.exists(newFileName)){
+                respondMsg = QString("This destination already contains a file called '%1'.").arg(newFileName);
+            }
+            else{
+                respondMsg = QString("Failed to rename '%1'. Please try again").arg(fileName);
+            }
+            respond(respondMsg,ret,ENUM_MSG_TYPE_RENAME_FILE_RESPOND);
+
+            delete[] curPath;
             break;
         }
         default:

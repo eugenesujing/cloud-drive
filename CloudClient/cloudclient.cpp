@@ -310,6 +310,20 @@ void CloudClient::onRecv()
             respond = NULL;
             break;
         }
+        case ENUM_MSG_TYPE_RENAME_FILE_RESPOND:{
+            char* respond = (char*)malloc(msgSize+1);
+            memset(respond,0,msgSize+1);
+            memcpy(respond,(char*)recvPto->data,msgSize);
+            if(recvPto->code != 1){
+                QMessageBox::warning(this, "Rename File", respond);
+            }else{
+                QMessageBox::information(this, "Rename File", respond);
+                Home::getInstance().getFiles()->loadFiles();
+            }
+            free(respond);
+            respond = NULL;
+            break;
+        }
         default:
             break;
         }

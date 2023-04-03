@@ -28,6 +28,8 @@ private slots:
 
     void on_deletePB_clicked();
 
+    void on_renamePB_clicked();
+
 private:
     Ui::Files *ui;
     void deleteListItem();
