@@ -89,6 +89,11 @@ QString CloudClient::getCurPath() const
     return curPath;
 }
 
+void CloudClient::setCurPath(QString newPath)
+{
+    curPath = newPath;
+}
+
 
 void CloudClient::on_login_button_clicked()
 {
@@ -322,6 +327,16 @@ void CloudClient::onRecv()
             }
             free(respond);
             respond = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_OPEN_FILE_RESPOND:{
+            if(recvPto->code == 1){
+                char fileName[32] = {""};
+                memcpy(fileName, recvPto->preData, 32);
+                curPath = QString("%1/%2").arg(curPath).arg(fileName);
+                Home::getInstance().getFiles()->updateFileList(recvPto);
+                qDebug()<<"curPath = "<<curPath;
+            }
             break;
         }
         default:

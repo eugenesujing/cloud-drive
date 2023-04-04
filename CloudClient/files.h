@@ -30,6 +30,10 @@ private slots:
 
     void on_renamePB_clicked();
 
+    void on_double_clicked(const QModelIndex& index);
+
+    void on_backPB_clicked();
+
 private:
     Ui::Files *ui;
     void deleteListItem();

@@ -21,6 +21,7 @@ signals:
 private:
     QString socketName;
     void respond(QString respondMsg, int ret, ENUM_MSG_TYPE type);
+    void loadFolder(QString fullPath, bool isOpen = false, QString fileName =NULL);
 };
 
 #endif // MYTCPSOCKET_H

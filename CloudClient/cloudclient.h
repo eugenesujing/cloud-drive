@@ -22,6 +22,7 @@ public:
     QString getLoginName()const;
     void loadFriendList();
     QString getCurPath()const;
+    void setCurPath(QString newPath);
 public slots:
     //Inform user when client is connected to server successfully
     void showConnected();

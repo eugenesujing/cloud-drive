@@ -9,6 +9,7 @@ Files::Files(QWidget *parent) :
     ui(new Ui::Files)
 {
     ui->setupUi(this);
+    connect(ui->listWidget, SIGNAL(doubleClicked(QModelIndex)),this, SLOT(on_double_clicked(QModelIndex)));
 }
 
 Files::~Files()
@@ -78,7 +79,6 @@ void Files::deleteListItem()
 
 void Files::loadFiles()
 {
-    qDebug()<<"in loadFiles()";
     QString curPath = CloudClient::getInstance().getCurPath();
     qDebug()<<"curPath="<<curPath;
     pto* sendPto = makePTO(curPath.size()+1);
@@ -86,12 +86,11 @@ void Files::loadFiles()
         qDebug()<<"malloc for sendPto failed on on_newFolderPB_clicked()";
         return;
     }
-    qDebug()<<"i'm here";
     memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
     sendPto->msgType = ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST;
-    qDebug()<<"sendPto->msgType = "<<sendPto->msgType;
     CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
-    qDebug()<<"snedPto->data"<<sendPto->totalSize;
+    free(sendPto);
+    sendPto = NULL;
 }
 
 void Files::updateFileList(pto *recvPto)
@@ -135,6 +134,8 @@ void Files::on_deletePB_clicked()
         memcpy(sendPto->preData, currFile.toStdString().c_str(), currFile.size());
         sendPto->msgType = ENUM_MSG_TYPE_DELETE_FILE_REQUEST;
         CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
+        free(sendPto);
+        sendPto = NULL;
     }
 }
 
@@ -160,5 +161,50 @@ void Files::on_renamePB_clicked()
         memcpy(sendPto->preData +32, newFileName.toStdString().c_str(), newFileName.size());
         sendPto->msgType = ENUM_MSG_TYPE_RENAME_FILE_REQUEST;
         CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
+        free(sendPto);
+        sendPto = NULL;
+    }
+}
+
+void Files::on_double_clicked(const QModelIndex& index)
+{
+    QString fileName = index.data().toString();
+    QString curPath = CloudClient::getInstance().getCurPath();
+    pto* sendPto = makePTO(curPath.size()+1);
+    if(sendPto==NULL){
+        qDebug()<<"malloc for sendPto failed on on_double_clicked";
+        return;
+    }
+    memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
+    memcpy(sendPto->preData, fileName.toStdString().c_str(), fileName.size());
+    sendPto->msgType = ENUM_MSG_TYPE_OPEN_FILE_REQUEST;
+    CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
+    free(sendPto);
+    sendPto = NULL;
+
+}
+
+void Files::on_backPB_clicked()
+{
+    QString curPath = CloudClient::getInstance().getCurPath();
+    QString root = QString("./%1").arg(CloudClient::getInstance().getLoginName());
+    if(curPath != root){
+        int index = curPath.lastIndexOf('/');
+        curPath.remove(index, curPath.size()-index);
+        qDebug()<<"curPath = "<<curPath;
+        pto* sendPto = makePTO(curPath.size()+1);
+        if(sendPto==NULL){
+            qDebug()<<"malloc for sendPto failed on on_double_clicked";
+            return;
+        }
+
+        memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
+        sendPto->msgType = ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST;
+
+        CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
+        CloudClient::getInstance().setCurPath(curPath);
+        free(sendPto);
+        sendPto = NULL;
+
     }
 }

@@ -293,30 +293,8 @@ void MyTcpSocket::onRecv()
         case ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST:{
             char* curPath = new char[recvPto->msgSize];
             memcpy(curPath, recvPto->data, recvPto->msgSize);
-            qDebug()<<"curPath="<<curPath;
-            QDir dir(curPath);
-            QFileInfoList fileInfoList = dir.entryInfoList();
-            int fileCount = fileInfoList.size();
-            pto* respPto = makePTO(fileCount*sizeof(fileInfo));
-            if(respPto == NULL){
-                qDebug()<<"malloc failed for ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST";
-                break;
-            }
-            respPto->msgType = ENUM_MSG_TYPE_LOAD_FOLDER_RESPOND;
-            fileInfo* pInfo = NULL;
-            for(int i=0; i <fileCount; i++){
-                pInfo = (fileInfo*)(respPto->data) +i;
-                memcpy(pInfo->fileName,fileInfoList[i].fileName().toStdString().c_str(),fileInfoList[i].fileName().size());
-                if(fileInfoList[i].isDir()){
-                    pInfo->fileType = 0;
-                }else if(fileInfoList[i].isFile()){
-                    pInfo->fileType = 1;
-                }
-            }
-            write((char*)respPto, respPto->totalSize);
+            loadFolder(curPath);
             delete [] curPath;
-            free(respPto);
-            respPto = NULL;
             break;
         }
         case ENUM_MSG_TYPE_DELETE_FILE_REQUEST:{
@@ -372,6 +350,22 @@ void MyTcpSocket::onRecv()
             delete[] curPath;
             break;
         }
+        case ENUM_MSG_TYPE_OPEN_FILE_REQUEST:{
+            char* curPath = new char[recvPto->msgSize];
+            memcpy(curPath, recvPto->data, recvPto->msgSize);
+            char fileName[32] = {""};
+            memcpy(fileName, recvPto->preData, 32);
+            QString fullPath = QString("%1/%2").arg(curPath).arg(fileName);
+
+            QFileInfo info(fullPath);
+            if(info.isDir()){
+                loadFolder(fullPath, true, fileName);
+            }else if(info.isFile()){
+                //download file
+            }
+            delete [] curPath;
+            break;
+        }
         default:
             break;
         }
@@ -409,6 +403,37 @@ void MyTcpSocket::respond(QString respondMsg, int ret, ENUM_MSG_TYPE type)
     respPto->code = ret;
     memcpy(respPto->data, respondMsg.toStdString().c_str(),respondMsg.size());
     write((char*)respPto,respPto->totalSize);
+    free(respPto);
+    respPto = NULL;
+}
+
+void MyTcpSocket::loadFolder(QString fullPath, bool isOpen, QString fileName)
+{
+    QDir dir(fullPath);
+    QFileInfoList fileInfoList = dir.entryInfoList();
+    int fileCount = fileInfoList.size();
+    pto* respPto = makePTO(fileCount*sizeof(fileInfo));
+    if(respPto == NULL){
+        qDebug()<<"malloc failed for ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST";
+        return;
+    }
+    respPto->msgType = ENUM_MSG_TYPE_LOAD_FOLDER_RESPOND;
+    fileInfo* pInfo = NULL;
+    if(isOpen){
+        memcpy(respPto->preData, fileName.toStdString().c_str(), fileName.size());
+        respPto->code = 1;
+        respPto->msgType = ENUM_MSG_TYPE_OPEN_FILE_RESPOND;
+    }
+    for(int i=0; i <fileCount; i++){
+        pInfo = (fileInfo*)(respPto->data) +i;
+        memcpy(pInfo->fileName,fileInfoList[i].fileName().toStdString().c_str(),fileInfoList[i].fileName().size());
+        if(fileInfoList[i].isDir()){
+            pInfo->fileType = 0;
+        }else if(fileInfoList[i].isFile()){
+            pInfo->fileType = 1;
+        }
+    }
+    write((char*)respPto, respPto->totalSize);
     free(respPto);
     respPto = NULL;
 }
