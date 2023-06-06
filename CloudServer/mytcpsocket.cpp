@@ -10,6 +10,7 @@ MyTcpSocket::MyTcpSocket()
 {
    connect(this, SIGNAL(readyRead()), this, SLOT(onRecv()));
    connect(this, SIGNAL(disconnected()), this, SLOT(socektOff()));
+   isUploading = false;
 }
 
 MyTcpSocket::~MyTcpSocket()
@@ -31,350 +32,410 @@ QString MyTcpSocket::getName() const
 void MyTcpSocket::onRecv()
 {
     qDebug()<<"Received a new message";
-    unsigned int ptoSize = 0;
-    this->read((char*)&ptoSize, sizeof(unsigned int));
-    unsigned int msgSize = ptoSize - sizeof (pto);
+    if(isUploading){
+        QByteArray buffer = readAll();
+        QString respondMsg;
+        uploadFile.write(buffer);
+        currUploadCount++;
 
-    pto* recvPto = makePTO(msgSize);
-    bool recvPtoFreed = false;
-    if(recvPto!=NULL){
-        recvPto->totalSize = ptoSize;
-        this->read((char*)recvPto +sizeof(unsigned int), ptoSize-sizeof (unsigned int));
-        qDebug()<<"msgType = "<<recvPto->msgType;
+        fileUploadSoFar += buffer.size();
 
-        //handle user request based on message type
-        switch (recvPto->msgType) {
-        case ENUM_MSG_TYPE_REGISTER_REQUEST:{
-            char name[32] = {' '};
-            char pwd[32] = {' '};
-            memcpy(name, recvPto->preData, 32);
-            memcpy(pwd, recvPto->preData+32, 32);
+        qDebug()<<"currUploadCount="<<currUploadCount;
+        qDebug()<<"fileUploadSoFar="<<fileUploadSoFar;
 
-            QString respondMsg;
-            int ret = operDB::getInstance().handleRegister(name,pwd);
-            qDebug()<<ret;
-            if(ret==1){
-                respondMsg = QString("Your new account <%1> has been registered successfully!\0").arg(name);
-                QString curPath = QString("./%1").arg(name);
-                QDir dir;
-                dir.mkdir(curPath);
-
-            }else if(ret==0){
-                respondMsg = QString("User name <%1> has been registered by another user. Please use another name!\0").arg(name);
-
-            }else if(ret==-1){
-                respondMsg = QString("Name or password is empty! Cannot handle register request.\0");
-                qDebug()<<"Name or password is empty! Cannot handle register request.";
-            }
-            qDebug()<<respondMsg;
-
-            respond(respondMsg, ret,  ENUM_MSG_TYPE_REGISTER_RESPOND);
-            break;
+        int ret = 0;
+        if(fileUploadSoFar==fileTotalSize){
+            uploadFile.close();
+            isUploading = false;
+            respondMsg = QString("Successfully uploaded file %1").arg(uploadFileName);
+            ret = 1;
+            respond(respondMsg, ret,  ENUM_MSG_TYPE_UPLOAD_FILE_RESPOND);
+        }else if (fileUploadSoFar>fileTotalSize){
+            uploadFile.close();
+            isUploading = false;
+            respondMsg = QString("Error when uploading file %1. Please try again").arg(uploadFileName);
+            respond(respondMsg, ret,  ENUM_MSG_TYPE_UPLOAD_FILE_RESPOND);
         }
-        case ENUM_MSG_TYPE_LOGIN_REQUEST:{
-            char name[32] = {' '};
-            char pwd[32] = {' '};
-            memcpy(name, recvPto->preData, 32);
-            memcpy(pwd, recvPto->preData+32, 32);
 
-            QString respondMsg;
-            int ret = operDB::getInstance().handleLogin(name,pwd);
-            qDebug()<<ret;
-            if(ret==1){
-                respondMsg = QString("");
-                socketName = name;
-            }else if(ret==0){
-                respondMsg = QString("Account <%1> is already logged in!\0").arg(name);
 
-            }else if(ret==-1){
-                respondMsg = QString("Incorrect name or password!\0");
-            }
-            qDebug()<<respondMsg;
-            pto* respPto = makePTO(respondMsg.size());
-            if(respPto==NULL){
-                qDebug()<<"malloc for respPto failed.";
-                break;
-            }
-            respond(respondMsg, ret,  ENUM_MSG_TYPE_LOGIN_RESPOND);
-            break;
-        }
-        case ENUM_MSG_TYPE_SHOW_ONLINE_REQUEST:{
-            qDebug()<<"SHOW_ONLINE";
-            QStringList res = operDB::getInstance().handleShowOnline(socketName.toStdString().c_str());
-            qDebug()<<"res.size="<<res.size();
 
-            pto* respPto = makePTO(32*res.size());
-            //respPto->msgSize = 32*res.size();
-            respPto->msgType = ENUM_MSG_TYPE_SHOW_ONLINE_RESPOND;
-            //respPto->totalSize = respPto->msgSize + sizeof(pto);
-            for(int i=0; i<res.size(); i++){
-                memcpy((char*)(respPto->data) + 32*i,res.at(i).toStdString().c_str(), res.at(i).size());
-                qDebug()<<"respPto->data="<<(char*)(respPto->data)+32*i;
-            }
-            write((char*)respPto, respPto->totalSize);
 
-            free(respPto);
-            respPto = NULL;
-            break;
-        }
-        case ENUM_MSG_TYPE_SEARCH_USER_REQUEST:{
-            char name[32] = {' '};
-            memcpy(name, recvPto->preData, 32);
+    }else{
+        unsigned int ptoSize = 0;
+        this->read((char*)&ptoSize, sizeof(unsigned int));
+        unsigned int msgSize = ptoSize - sizeof (pto);
 
-            QString respondMsg;
-            int ret = operDB::getInstance().handleSearchUser(name);
-            qDebug()<<ret;
-            if(ret==1){
-                respondMsg = QString("Account <%1> is offline!").arg(name);
-            }else if(ret==2){
-                respondMsg = QString("Account <%1> is online!").arg(name);
+        pto* recvPto = makePTO(msgSize);
+        bool recvPtoFreed = false;
+        if(recvPto!=NULL){
+            recvPto->totalSize = ptoSize;
+            this->read((char*)recvPto +sizeof(unsigned int), ptoSize-sizeof (unsigned int));
+            qDebug()<<"msgType = "<<recvPto->msgType;
 
-            }else if(ret==-1){
-                respondMsg = QString("Invalid or empty username!");
-            }else if(ret==0){
-                respondMsg = QString("Account <%1> does not exist!").arg(name);
-            }
-            qDebug()<<respondMsg;
-            respond(respondMsg, ret, ENUM_MSG_TYPE_SEARCH_USER_RESPOND);
-            break;
-        }
-        case ENUM_MSG_TYPE_ADD_FRIEND_REQUEST:{
-            char searchName[32] = {' '};
-            char loginName[32] = {' '};
-            memcpy(searchName, recvPto->preData, 32);
-            memcpy(loginName, recvPto->preData+32, 32);
+            //handle user request based on message type
+            switch (recvPto->msgType) {
+            case ENUM_MSG_TYPE_REGISTER_REQUEST:{
+                char name[32] = {' '};
+                char pwd[32] = {' '};
+                memcpy(name, recvPto->preData, 32);
+                memcpy(pwd, recvPto->preData+32, 32);
 
-            int ret = operDB::getInstance().handleAddFriend(searchName,loginName);
-            QString respondMsg;
-            qDebug()<<ret;
-            if(ret==1){
-                respondMsg = QString("Account <%1> is offline.").arg(searchName);
-            }else if(ret==2){
-                pto* resendPto = makePTO(0);
-                memcpy(resendPto,recvPto,sizeof (pto));
-                resendPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESEND_REQUEST;
-                MyTcpServer::getInstance().resend(searchName,resendPto);
-                respondMsg = QString("Your friend request has been sent to <%1>.").arg(searchName);
-            }else if(ret==-1){
-                respondMsg = QString("Unknown Error.");
-            }else if(ret==0){
-                respondMsg = QString("Account <%1> is your friend already.").arg(searchName);
-            }else if(ret==3){
-                respondMsg = QString("Account <%1> does not exist.").arg(searchName);
-            }
-            qDebug()<<respondMsg;
-            respond(respondMsg, ret, ENUM_MSG_TYPE_ADD_FRIEND_RESPOND);
-            break;
-        }
-        case ENUM_MSG_TYPE_ADD_FRIEND_RESEND_RESPOND:{
-            char searchName[32] = {' '};
-            char loginName[32] = {' '};
-            memcpy(searchName, recvPto->preData, 32);
-            memcpy(loginName, recvPto->preData+32, 32);
-
-            QString respondMsg;
-            int ret = 1;
-            if(recvPto->code == QMessageBox::Yes){
-                ret = operDB::getInstance().handleAddFriendAgree(searchName,loginName);
+                QString respondMsg;
+                int ret = operDB::getInstance().handleRegister(name,pwd);
+                qDebug()<<ret;
                 if(ret==1){
-                    respondMsg = QString("<%1> has accepted your friend request.").arg(searchName);
-                }else{
-                    respondMsg = QString("System Error. Your friend request to <%1> has failed to be completed.").arg(searchName);
-                    ret = -1;
+                    respondMsg = QString("Your new account <%1> has been registered successfully!\0").arg(name);
+                    QString curPath = QString("./%1").arg(name);
+                    QDir dir;
+                    dir.mkdir(curPath);
+
+                }else if(ret==0){
+                    respondMsg = QString("User name <%1> has been registered by another user. Please use another name!\0").arg(name);
+
+                }else if(ret==-1){
+                    respondMsg = QString("Name or password is empty! Cannot handle register request.\0");
+                    qDebug()<<"Name or password is empty! Cannot handle register request.";
                 }
-            }else if(recvPto->code == QMessageBox::No){
-                respondMsg = QString("<%1> has reclined your friend request.").arg(searchName);
-            }
+                qDebug()<<respondMsg;
 
-            pto* respPto = makePTO(respondMsg.size());
-            if(respPto==NULL){
-                qDebug()<<"malloc for respPto failed.";
+                respond(respondMsg, ret,  ENUM_MSG_TYPE_REGISTER_RESPOND);
                 break;
             }
+            case ENUM_MSG_TYPE_LOGIN_REQUEST:{
+                char name[32] = {' '};
+                char pwd[32] = {' '};
+                memcpy(name, recvPto->preData, 32);
+                memcpy(pwd, recvPto->preData+32, 32);
 
-            respPto->code = ret;
-            respPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
-            strcpy(respPto->data, respondMsg.toStdString().c_str());
-            MyTcpServer::getInstance().resend(loginName, respPto);
-            break;
-        }
-        case ENUM_MSG_TYPE_FRESH_FRIENDLIST_REQUEST:{
-            QStringList res = operDB::getInstance().handleFreshFriendList(socketName.toStdString().c_str());
-            pto* respPto = makePTO(res.size()*32);
-            if(respPto==NULL){
-                qDebug()<<"malloc for respPto failed.";
-                break;
-            }
-            respPto->msgType = ENUM_MSG_TYPE_FRESH_FRIENDLIST_RESPOND;
-            for(int i=0; i<res.size(); i++){
-                memcpy((char*)(respPto->data)+i*32,res[i].toStdString().c_str(), res[i].size());
-                qDebug()<<"respPto->data="<<(char*)(respPto->data)+32*i;
-            }
-            write((char*)respPto,respPto->totalSize);
-            free(respPto);
-            respPto = NULL;
-            break;
-        }
-        case ENUM_MSG_TYPE_DELETE_FRIEND_REQUEST:{
-            char friendName[32] = {' '};
-            char loginName[32] = {' '};
-            memcpy(friendName, recvPto->preData, 32);
-            memcpy(loginName, recvPto->preData+32, 32);
+                QString respondMsg;
+                int ret = operDB::getInstance().handleLogin(name,pwd);
+                qDebug()<<ret;
+                if(ret==1){
+                    respondMsg = QString("");
+                    socketName = name;
+                }else if(ret==0){
+                    respondMsg = QString("Account <%1> is already logged in!\0").arg(name);
 
-            int ret = operDB::getInstance().handleDeleteFriend(friendName,loginName);
-            QString respondMsg;
-            if(ret==1){
-                respondMsg = QString("You have successfully deleted <%1>.").arg(friendName);
-                QString resendMsg = QString("<%1> has deleted you.").arg(loginName);
-                pto* resendPTO = makePTO(resendMsg.size());
-                if(resendPTO==NULL){
+                }else if(ret==-1){
+                    respondMsg = QString("Incorrect name or password!\0");
+                }
+                qDebug()<<respondMsg;
+                pto* respPto = makePTO(respondMsg.size());
+                if(respPto==NULL){
                     qDebug()<<"malloc for respPto failed.";
                     break;
                 }
-                resendPTO->msgType = ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND;
-                resendPTO->code = 1;
-                memcpy(resendPTO->data, resendMsg.toStdString().c_str(),resendMsg.size());
-                MyTcpServer::getInstance().resend(friendName, resendPTO);
-            }else{
-                respondMsg = QString("System Error. Please try again.");
+                respond(respondMsg, ret,  ENUM_MSG_TYPE_LOGIN_RESPOND);
+                break;
             }
-            respond(respondMsg, ret, ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND);
-            break;
-        }
-        case ENUM_MSG_TYPE_PRIVATE_MESSAGE_REQUEST:{
-            char friendName[32] = {""};
-            memcpy(friendName, recvPto->preData, 32);
+            case ENUM_MSG_TYPE_SHOW_ONLINE_REQUEST:{
+                qDebug()<<"SHOW_ONLINE";
+                QStringList res = operDB::getInstance().handleShowOnline(socketName.toStdString().c_str());
+                qDebug()<<"res.size="<<res.size();
 
-            recvPto->msgType = ENUM_MSG_TYPE_PRIVATE_MESSAGE_RESPOND;
-            MyTcpServer::getInstance().resend(friendName, recvPto);
-            recvPtoFreed = true;
-
-            break;
-        }
-        case ENUM_MSG_TYPE_BROADCAST_REQUEST:{
-            recvPto->msgType = ENUM_MSG_TYPE_BROADCAST_RESPOND;
-            MyTcpServer::getInstance().broadcast(recvPto);
-            recvPtoFreed = true;
-            break;
-        }
-        case ENUM_MSG_TYPE_NEW_FOLDER_REQUEST:{
-            char loginName[32] = {""};
-            char newFolderName[32] = {""};
-            memcpy(loginName, recvPto->preData, 32);
-            memcpy(newFolderName, recvPto->preData+32, 32);
-            char* curPath = (char*)malloc(recvPto->msgSize+1);
-            memset(curPath, 0, recvPto->msgSize+1);
-            memcpy(curPath, recvPto->data, recvPto->msgSize);
-            QDir dir(curPath);
-
-            QString respondMsg;
-            int ret = 0;
-            if(dir.exists()){
-                if(dir.exists(newFolderName)){
-                    respondMsg = QString("This destination already contains a folder called '%1'.").arg(newFolderName);
-                }else{
-                    if(dir.mkdir(newFolderName)){
-                        respondMsg = QString("Folder '%1' has been created successfuly.").arg(newFolderName);
-                        ret = 1;
-                    }else{
-                        respondMsg = QString("Failed to create folder '%1'. Please try again.").arg(newFolderName);
-                        ret = 2;
-                    }
+                pto* respPto = makePTO(32*res.size());
+                //respPto->msgSize = 32*res.size();
+                respPto->msgType = ENUM_MSG_TYPE_SHOW_ONLINE_RESPOND;
+                //respPto->totalSize = respPto->msgSize + sizeof(pto);
+                for(int i=0; i<res.size(); i++){
+                    memcpy((char*)(respPto->data) + 32*i,res.at(i).toStdString().c_str(), res.at(i).size());
+                    qDebug()<<"respPto->data="<<(char*)(respPto->data)+32*i;
                 }
-            }else{
-                ret = -1;
-                respondMsg = QString("System cannot find '%1'. Please try again.").arg(curPath);
-            }
-            respond(respondMsg, ret, ENUM_MSG_TYPE_NEW_FOLDER_RESPOND);
-            free(curPath);
-            curPath = NULL;
-            break;
-        }
-        case ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST:{
-            char* curPath = new char[recvPto->msgSize];
-            memcpy(curPath, recvPto->data, recvPto->msgSize);
-            loadFolder(curPath);
-            delete [] curPath;
-            break;
-        }
-        case ENUM_MSG_TYPE_DELETE_FILE_REQUEST:{
-            char* curPath = new char[recvPto->msgSize];
-            memcpy(curPath, recvPto->data, recvPto->msgSize);
-            qDebug()<<"curPath="<<curPath;
-            char fileName[32] = {""};
-            memcpy(fileName, recvPto->preData, 32);
-            QString fullPath = QString("%1/%2").arg(curPath).arg(fileName);
+                write((char*)respPto, respPto->totalSize);
 
-            QFileInfo fileInfo(fullPath);
-            int ret = 0;
-            if(fileInfo.isDir()){
-                QDir dir(fullPath);
-                ret = dir.removeRecursively();
-            }else if(fileInfo.isFile()){
+                free(respPto);
+                respPto = NULL;
+                break;
+            }
+            case ENUM_MSG_TYPE_SEARCH_USER_REQUEST:{
+                char name[32] = {' '};
+                memcpy(name, recvPto->preData, 32);
+
+                QString respondMsg;
+                int ret = operDB::getInstance().handleSearchUser(name);
+                qDebug()<<ret;
+                if(ret==1){
+                    respondMsg = QString("Account <%1> is offline!").arg(name);
+                }else if(ret==2){
+                    respondMsg = QString("Account <%1> is online!").arg(name);
+
+                }else if(ret==-1){
+                    respondMsg = QString("Invalid or empty username!");
+                }else if(ret==0){
+                    respondMsg = QString("Account <%1> does not exist!").arg(name);
+                }
+                qDebug()<<respondMsg;
+                respond(respondMsg, ret, ENUM_MSG_TYPE_SEARCH_USER_RESPOND);
+                break;
+            }
+            case ENUM_MSG_TYPE_ADD_FRIEND_REQUEST:{
+                char searchName[32] = {' '};
+                char loginName[32] = {' '};
+                memcpy(searchName, recvPto->preData, 32);
+                memcpy(loginName, recvPto->preData+32, 32);
+
+                int ret = operDB::getInstance().handleAddFriend(searchName,loginName);
+                QString respondMsg;
+                qDebug()<<ret;
+                if(ret==1){
+                    respondMsg = QString("Account <%1> is offline.").arg(searchName);
+                }else if(ret==2){
+                    pto* resendPto = makePTO(0);
+                    memcpy(resendPto,recvPto,sizeof (pto));
+                    resendPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESEND_REQUEST;
+                    MyTcpServer::getInstance().resend(searchName,resendPto);
+                    respondMsg = QString("Your friend request has been sent to <%1>.").arg(searchName);
+                }else if(ret==-1){
+                    respondMsg = QString("Unknown Error.");
+                }else if(ret==0){
+                    respondMsg = QString("Account <%1> is your friend already.").arg(searchName);
+                }else if(ret==3){
+                    respondMsg = QString("Account <%1> does not exist.").arg(searchName);
+                }
+                qDebug()<<respondMsg;
+                respond(respondMsg, ret, ENUM_MSG_TYPE_ADD_FRIEND_RESPOND);
+                break;
+            }
+            case ENUM_MSG_TYPE_ADD_FRIEND_RESEND_RESPOND:{
+                char searchName[32] = {' '};
+                char loginName[32] = {' '};
+                memcpy(searchName, recvPto->preData, 32);
+                memcpy(loginName, recvPto->preData+32, 32);
+
+                QString respondMsg;
+                int ret = 1;
+                if(recvPto->code == QMessageBox::Yes){
+                    ret = operDB::getInstance().handleAddFriendAgree(searchName,loginName);
+                    if(ret==1){
+                        respondMsg = QString("<%1> has accepted your friend request.").arg(searchName);
+                    }else{
+                        respondMsg = QString("System Error. Your friend request to <%1> has failed to be completed.").arg(searchName);
+                        ret = -1;
+                    }
+                }else if(recvPto->code == QMessageBox::No){
+                    respondMsg = QString("<%1> has reclined your friend request.").arg(searchName);
+                }
+
+                pto* respPto = makePTO(respondMsg.size());
+                if(respPto==NULL){
+                    qDebug()<<"malloc for respPto failed.";
+                    break;
+                }
+
+                respPto->code = ret;
+                respPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
+                strcpy(respPto->data, respondMsg.toStdString().c_str());
+                MyTcpServer::getInstance().resend(loginName, respPto);
+                break;
+            }
+            case ENUM_MSG_TYPE_FRESH_FRIENDLIST_REQUEST:{
+                QStringList res = operDB::getInstance().handleFreshFriendList(socketName.toStdString().c_str());
+                pto* respPto = makePTO(res.size()*32);
+                if(respPto==NULL){
+                    qDebug()<<"malloc for respPto failed.";
+                    break;
+                }
+                respPto->msgType = ENUM_MSG_TYPE_FRESH_FRIENDLIST_RESPOND;
+                for(int i=0; i<res.size(); i++){
+                    memcpy((char*)(respPto->data)+i*32,res[i].toStdString().c_str(), res[i].size());
+                    qDebug()<<"respPto->data="<<(char*)(respPto->data)+32*i;
+                }
+                write((char*)respPto,respPto->totalSize);
+                free(respPto);
+                respPto = NULL;
+                break;
+            }
+            case ENUM_MSG_TYPE_DELETE_FRIEND_REQUEST:{
+                char friendName[32] = {' '};
+                char loginName[32] = {' '};
+                memcpy(friendName, recvPto->preData, 32);
+                memcpy(loginName, recvPto->preData+32, 32);
+
+                int ret = operDB::getInstance().handleDeleteFriend(friendName,loginName);
+                QString respondMsg;
+                if(ret==1){
+                    respondMsg = QString("You have successfully deleted <%1>.").arg(friendName);
+                    QString resendMsg = QString("<%1> has deleted you.").arg(loginName);
+                    pto* resendPTO = makePTO(resendMsg.size());
+                    if(resendPTO==NULL){
+                        qDebug()<<"malloc for respPto failed.";
+                        break;
+                    }
+                    resendPTO->msgType = ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND;
+                    resendPTO->code = 1;
+                    memcpy(resendPTO->data, resendMsg.toStdString().c_str(),resendMsg.size());
+                    MyTcpServer::getInstance().resend(friendName, resendPTO);
+                }else{
+                    respondMsg = QString("System Error. Please try again.");
+                }
+                respond(respondMsg, ret, ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND);
+                break;
+            }
+            case ENUM_MSG_TYPE_PRIVATE_MESSAGE_REQUEST:{
+                char friendName[32] = {""};
+                memcpy(friendName, recvPto->preData, 32);
+
+                recvPto->msgType = ENUM_MSG_TYPE_PRIVATE_MESSAGE_RESPOND;
+                MyTcpServer::getInstance().resend(friendName, recvPto);
+                recvPtoFreed = true;
+
+                break;
+            }
+            case ENUM_MSG_TYPE_BROADCAST_REQUEST:{
+                recvPto->msgType = ENUM_MSG_TYPE_BROADCAST_RESPOND;
+                MyTcpServer::getInstance().broadcast(recvPto);
+                recvPtoFreed = true;
+                break;
+            }
+            case ENUM_MSG_TYPE_NEW_FOLDER_REQUEST:{
+                char loginName[32] = {""};
+                char newFolderName[32] = {""};
+                memcpy(loginName, recvPto->preData, 32);
+                memcpy(newFolderName, recvPto->preData+32, 32);
+                char* curPath = (char*)malloc(recvPto->msgSize+1);
+                memset(curPath, 0, recvPto->msgSize+1);
+                memcpy(curPath, recvPto->data, recvPto->msgSize);
+                QDir dir(curPath);
+
+                QString respondMsg;
+                int ret = 0;
+                if(dir.exists()){
+                    if(dir.exists(newFolderName)){
+                        respondMsg = QString("This destination already contains a folder called '%1'.").arg(newFolderName);
+                    }else{
+                        if(dir.mkdir(newFolderName)){
+                            respondMsg = QString("Folder '%1' has been created successfuly.").arg(newFolderName);
+                            ret = 1;
+                        }else{
+                            respondMsg = QString("Failed to create folder '%1'. Please try again.").arg(newFolderName);
+                            ret = 2;
+                        }
+                    }
+                }else{
+                    ret = -1;
+                    respondMsg = QString("System cannot find '%1'. Please try again.").arg(curPath);
+                }
+                respond(respondMsg, ret, ENUM_MSG_TYPE_NEW_FOLDER_RESPOND);
+                free(curPath);
+                curPath = NULL;
+                break;
+            }
+            case ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST:{
+                char* curPath = new char[recvPto->msgSize];
+                memcpy(curPath, recvPto->data, recvPto->msgSize);
+                loadFolder(curPath);
+                delete [] curPath;
+                break;
+            }
+            case ENUM_MSG_TYPE_DELETE_FILE_REQUEST:{
+                char* curPath = new char[recvPto->msgSize];
+                memcpy(curPath, recvPto->data, recvPto->msgSize);
+                qDebug()<<"curPath="<<curPath;
+                char fileName[32] = {""};
+                memcpy(fileName, recvPto->preData, 32);
+                QString fullPath = QString("%1/%2").arg(curPath).arg(fileName);
+
+                QFileInfo fileInfo(fullPath);
+                int ret = 0;
+                if(fileInfo.isDir()){
+                    QDir dir(fullPath);
+                    ret = dir.removeRecursively();
+                }else if(fileInfo.isFile()){
+                    QFile file(fullPath);
+                    ret = file.remove();
+                }
+                QString respondMsg;
+                if(ret==1){
+                    respondMsg = QString("File '%1' has been deleted").arg(fileName);
+                }else{
+                    respondMsg = QString("Failed to delete file '%1'. Please try again.").arg(fileName);
+                }
+                respond(respondMsg, ret, ENUM_MSG_TYPE_DELETE_FILE_RESPOND);
+                delete[] curPath;
+                break;
+            }
+            case ENUM_MSG_TYPE_RENAME_FILE_REQUEST:{
+                char* curPath = new char[recvPto->msgSize];
+                memcpy(curPath, recvPto->data, recvPto->msgSize);
+                char fileName[32] = {""};
+                memcpy(fileName, recvPto->preData, 32);
+                char newFileName[32] = {""};
+                memcpy(newFileName, recvPto->preData+32, 32);
+                QString fullPath = QString("%1/%2").arg(curPath).arg(fileName);
+                QString newFullPath = QString("%1/%2").arg(curPath).arg(newFileName);
+
                 QFile file(fullPath);
-                ret = file.remove();
-            }
-            QString respondMsg;
-            if(ret==1){
-                respondMsg = QString("File '%1' has been deleted").arg(fileName);
-            }else{
-                respondMsg = QString("Failed to delete file '%1'. Please try again.").arg(fileName);
-            }
-            respond(respondMsg, ret, ENUM_MSG_TYPE_DELETE_FILE_RESPOND);
-            delete[] curPath;
-            break;
-        }
-        case ENUM_MSG_TYPE_RENAME_FILE_REQUEST:{
-            char* curPath = new char[recvPto->msgSize];
-            memcpy(curPath, recvPto->data, recvPto->msgSize);
-            char fileName[32] = {""};
-            memcpy(fileName, recvPto->preData, 32);
-            char newFileName[32] = {""};
-            memcpy(newFileName, recvPto->preData+32, 32);
-            QString fullPath = QString("%1/%2").arg(curPath).arg(fileName);
-            QString newFullPath = QString("%1/%2").arg(curPath).arg(newFileName);
+                QDir dir(curPath);
+                int ret = file.rename(newFullPath);
+                QString respondMsg;
+                if(ret == 1){
+                    respondMsg = QString("Rename successfully!");
+                }else if(dir.exists(newFileName)){
+                    respondMsg = QString("This destination already contains a file called '%1'.").arg(newFileName);
+                }
+                else{
+                    respondMsg = QString("Failed to rename '%1'. Please make sure the file is not currently opened by another application.").arg(fileName);
+                }
+                respond(respondMsg,ret,ENUM_MSG_TYPE_RENAME_FILE_RESPOND);
 
-            QDir dir(curPath);
-            int ret = dir.rename(fullPath, newFullPath);
-            QString respondMsg;
-            if(ret == 1){
-                respondMsg = QString("Rename successfully!");
-            }else if(dir.exists(newFileName)){
-                respondMsg = QString("This destination already contains a file called '%1'.").arg(newFileName);
+                delete[] curPath;
+                break;
             }
-            else{
-                respondMsg = QString("Failed to rename '%1'. Please try again").arg(fileName);
+            case ENUM_MSG_TYPE_OPEN_FILE_REQUEST:{
+                char* curPath = new char[recvPto->msgSize];
+                memcpy(curPath, recvPto->data, recvPto->msgSize);
+                char fileName[32] = {""};
+                memcpy(fileName, recvPto->preData, 32);
+                QString fullPath = QString("%1/%2").arg(curPath).arg(fileName);
+
+                QFileInfo info(fullPath);
+                if(info.isDir()){
+                    loadFolder(fullPath, true, fileName);
+                }else if(info.isFile()){
+                    //download file
+                }
+                delete [] curPath;
+                break;
             }
-            respond(respondMsg,ret,ENUM_MSG_TYPE_RENAME_FILE_RESPOND);
+            case ENUM_MSG_TYPE_UPLOAD_FILE_REQUEST:{
+                char* curPath = new char[recvPto->msgSize];
+                memcpy(curPath, recvPto->data, recvPto->msgSize);
+                memset(uploadFileName,0,32);
+                long long fileSize = 0;
+                memcpy(uploadFileName,recvPto->preData, 32);
+                sscanf(recvPto->preData+32, "%lld",&fileSize);
+                QString filePath = QString("%1/%2").arg(curPath).arg(uploadFileName);
 
-            delete[] curPath;
-            break;
-        }
-        case ENUM_MSG_TYPE_OPEN_FILE_REQUEST:{
-            char* curPath = new char[recvPto->msgSize];
-            memcpy(curPath, recvPto->data, recvPto->msgSize);
-            char fileName[32] = {""};
-            memcpy(fileName, recvPto->preData, 32);
-            QString fullPath = QString("%1/%2").arg(curPath).arg(fileName);
+                uploadFile.setFileName(filePath);
+                QString respondMsg;
+                if(uploadFile.open(QIODevice::WriteOnly)){
 
-            QFileInfo info(fullPath);
-            if(info.isDir()){
-                loadFolder(fullPath, true, fileName);
-            }else if(info.isFile()){
-                //download file
+                   fileTotalSize = fileSize;
+                   fileUploadSoFar = 0;
+                   isUploading = true;
+                   currUploadCount = 0;
+                   qDebug()<<"FileName ="<<uploadFileName;
+                   qDebug()<<"fileTotalSize ="<<fileTotalSize;
+                }else{
+                    respondMsg = QString("Failed to upload '%1'.").arg(uploadFileName);
+                    respond(respondMsg, 0, ENUM_MSG_TYPE_UPLOAD_FILE_RESPOND);
+                }
+
+                delete [] curPath;
+                break;
             }
-            delete [] curPath;
-            break;
-        }
-        default:
-            break;
-        }
+            default:
+                break;
+            }
 
+        }
+        if(recvPtoFreed == false){
+            free(recvPto);
+            recvPto = NULL;
+        }
     }
-    if(recvPtoFreed == false){
-        free(recvPto);
-        recvPto = NULL;
-    }
+
+
 
 }
 

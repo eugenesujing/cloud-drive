@@ -2,6 +2,7 @@
 #define FILES_H
 
 #include <QWidget>
+#include <QTimer>
 #include  "protocol.h"
 
 namespace Ui {
@@ -34,9 +35,15 @@ private slots:
 
     void on_backPB_clicked();
 
+    void on_uploadPB_clicked();
+
+    void uploadBegin();
+
 private:
     Ui::Files *ui;
     void deleteListItem();
+    QTimer   timer;
+    QString filePathUpload;
 
 };
 

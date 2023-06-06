@@ -1,0 +1,16 @@
+debug/files.o
+debug/friend.o
+debug/home.o
+debug/main.o
+debug/cloudclient.o
+debug/online.o
+debug/privatemessage.o
+debug/protocol.o
+debug/qrc_config.o
+debug/qrc_fileTpye.o
+debug/moc_cloudclient.o
+debug/moc_files.o
+debug/moc_friend.o
+debug/moc_home.o
+debug/moc_online.o
+debug/moc_privatemessage.o

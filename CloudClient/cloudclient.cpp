@@ -269,7 +269,7 @@ void CloudClient::onRecv()
             memset(msg, 0, recvPto->msgSize+1);
             memcpy(msg, recvPto->data, recvPto->msgSize);
             memcpy(friendName, recvPto->preData+32, 32);
-
+            qDebug()<<"friendName="<<friendName<<" message: "<<QString(msg)<<endl;
             Home::getInstance().getFriend()->newPrivateMessgae(friendName, msg);
             break;
         }
@@ -337,6 +337,20 @@ void CloudClient::onRecv()
                 Home::getInstance().getFiles()->updateFileList(recvPto);
                 qDebug()<<"curPath = "<<curPath;
             }
+            break;
+        }
+        case ENUM_MSG_TYPE_UPLOAD_FILE_RESPOND:{
+            char* respond = (char*)malloc(msgSize+1);
+            memset(respond,0,msgSize+1);
+            memcpy(respond,(char*)recvPto->data,msgSize);
+            if(recvPto->code != 1){
+                QMessageBox::warning(this, "Upload File", respond);
+            }else{
+                QMessageBox::information(this, "Upload File", respond);
+                Home::getInstance().getFiles()->loadFiles();
+            }
+            free(respond);
+            respond = NULL;
             break;
         }
         default:

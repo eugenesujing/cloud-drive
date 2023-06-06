@@ -3,6 +3,7 @@
 #include "cloudclient.h"
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QFileDialog>
 
 Files::Files(QWidget *parent) :
     QWidget(parent),
@@ -10,6 +11,7 @@ Files::Files(QWidget *parent) :
 {
     ui->setupUi(this);
     connect(ui->listWidget, SIGNAL(doubleClicked(QModelIndex)),this, SLOT(on_double_clicked(QModelIndex)));
+    connect(&timer, SIGNAL(timeout()), this, SLOT(uploadBegin()));
 }
 
 Files::~Files()
@@ -207,4 +209,67 @@ void Files::on_backPB_clicked()
         sendPto = NULL;
 
     }
+}
+
+void Files::on_uploadPB_clicked()
+{
+    filePathUpload = QFileDialog::getOpenFileName();
+    if(filePathUpload.isEmpty()){
+        QMessageBox::warning(this, "Upload File", "File name cannot be empty.");
+    }else{
+        int index = filePathUpload.lastIndexOf('/');
+        QString fileName = filePathUpload.right(filePathUpload.size()-index-1);
+        if(fileName.size()>32){
+            QMessageBox::warning(this, "Upload File", "File name cannot be greater than 32 characters.");
+        }else{
+            QFile file(filePathUpload);
+            long long fileSize = file.size();
+            QString curPath = CloudClient::getInstance().getCurPath();
+            pto* sendPto = makePTO(curPath.size()+1);
+            sendPto->msgType = ENUM_MSG_TYPE_UPLOAD_FILE_REQUEST;
+            memcpy(sendPto->preData, fileName.toStdString().c_str(),32);
+            QString fileSizeString = QString("%1").arg(fileSize);
+            memcpy(sendPto->preData+32, fileSizeString.toStdString().c_str(),32);
+            memcpy(sendPto->data, curPath.toStdString().c_str(),curPath.size());
+            CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
+
+            qDebug()<<"fileSize="<<fileSize;
+            qDebug()<<"fileName="<<fileName;
+            timer.start(1000);
+            free(sendPto);
+            sendPto = NULL;
+        }
+    }
+
+}
+
+void Files::uploadBegin()
+{
+    timer.stop();
+    QFile file(filePathUpload);
+    if(file.open(QIODevice::ReadOnly)){
+        char* buffer= new char[4096];
+        memset(buffer, 0, 4096);
+        qint64 readTotal = 0;
+
+        while(true){
+            readTotal = file.read(buffer, 4096);
+            if(readTotal>0 && readTotal<=4096){
+                CloudClient::getInstance().getSocket().write(buffer,readTotal);
+                qDebug()<<"readTotal="<<readTotal;
+            }else if(readTotal==0){
+                break;
+            }else{
+                QMessageBox::warning(this, "Upload File", "Failed to open file. Please try again.");
+                break;
+            }
+
+        }
+        qDebug()<<"Finish uploading file";
+        file.close();
+        delete[] buffer;
+    }else{
+        QMessageBox::warning(this, "Upload File", "Failed to open file. Please try again.");
+    }
+
 }

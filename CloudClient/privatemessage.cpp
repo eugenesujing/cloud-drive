@@ -48,6 +48,11 @@ void PrivateMessage::on_msgSendPB_clicked()
     memcpy(respPto->preData, friendName.toStdString().c_str(), 32);
     memcpy(respPto->preData+32, loginName.toStdString().c_str(), 32);
     memcpy(respPto->data, msgToBeSent.toStdString().c_str(), msgToBeSent.size());
+    qDebug()<<"msgTobeSent="<<msgToBeSent<<endl;
+    qDebug()<<"c_str()="<<msgToBeSent.toStdString().c_str();
+    qDebug()<<"resPto->data="<<respPto->data<<endl;
+    qDebug()<<"msgSize="<<msgToBeSent.size();
+    qDebug()<<"strlen(respto->data)="<<strlen(respPto->data);
     CloudClient::getInstance().getSocket().write((char*)respPto, respPto->totalSize);
 
     QString myMsg = QString("%1:\n    %2").arg(loginName).arg(msgToBeSent);

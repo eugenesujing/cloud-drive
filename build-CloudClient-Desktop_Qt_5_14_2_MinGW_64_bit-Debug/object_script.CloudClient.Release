@@ -1,0 +1,16 @@
+release/files.o
+release/friend.o
+release/home.o
+release/main.o
+release/cloudclient.o
+release/online.o
+release/privatemessage.o
+release/protocol.o
+release/qrc_config.o
+release/qrc_fileTpye.o
+release/moc_cloudclient.o
+release/moc_files.o
+release/moc_friend.o
+release/moc_home.o
+release/moc_online.o
+release/moc_privatemessage.o

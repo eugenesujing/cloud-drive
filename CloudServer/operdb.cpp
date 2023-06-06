@@ -22,7 +22,7 @@ operDB::~operDB()
 void operDB::initDB()
 {
     myDB.setHostName("localhost");
-    myDB.setDatabaseName("C:\\Users\\eugen\\Documents\\CloudServer\\cloudDB.db");
+    myDB.setDatabaseName("C:\\Users\\eugen\\Documents\\cloud drive\\cloud-drive\\CloudServer\\cloudDB.db");
     if(myDB.open()){
         QSqlQuery query;
         query.exec("select * from UserInfo");

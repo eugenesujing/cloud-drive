@@ -1,0 +1,11 @@
+release/main.o
+release/cloudserver.o
+release/mytcpserver.o
+release/mytcpsocket.o
+release/operdb.o
+release/protocol.o
+release/qrc_config.o
+release/moc_cloudserver.o
+release/moc_mytcpserver.o
+release/moc_mytcpsocket.o
+release/moc_operdb.o
