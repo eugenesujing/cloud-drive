@@ -119,6 +119,35 @@ void Files::updateFileList(pto *recvPto)
     }
 }
 
+bool Files::writeDownloadFile(qint64 fileUploadSoFar, qint64 fileTotalSize)
+{
+    QByteArray buffer =CloudClient::getInstance().getSocket().readAll();
+    QString respondMsg;
+    downloadFile.write(buffer);
+
+    fileUploadSoFar += buffer.size();
+
+    //qDebug()<<"currUploadCount="<<currUploadCount;
+    //qDebug()<<"fileUploadSoFar="<<fileUploadSoFar;
+
+    if(fileUploadSoFar==fileTotalSize){
+        downloadFile.close();
+        respondMsg = QString("Successfully downloaded file %1").arg(fileNameDownload);
+        QMessageBox::information(this, "Download File", respondMsg);
+        fileNameDownload.clear();
+        return true;
+    }else if (fileUploadSoFar>fileTotalSize){
+        downloadFile.close();
+
+        respondMsg = QString("Error in downloading file %1. Please try again").arg(fileNameDownload);
+        QMessageBox::warning(this, "Download File", respondMsg);
+        fileNameDownload.clear();
+        return true;
+    }
+
+    return false;
+}
+
 void Files::on_deletePB_clicked()
 {
     QListWidgetItem* listItem  = ui->listWidget->currentItem();
@@ -272,4 +301,37 @@ void Files::uploadBegin()
         QMessageBox::warning(this, "Upload File", "Failed to open file. Please try again.");
     }
 
+}
+
+void Files::on_downloadPB_clicked()
+{
+    QListWidgetItem* listItem  = ui->listWidget->currentItem();
+    if(listItem == NULL){
+        QMessageBox::warning(this, "Download file", "Please select a file.");
+    }else{
+        QString filePathDownload = QFileDialog::getSaveFileName();
+        if(filePathDownload.isEmpty()){
+            QMessageBox::warning(this, "Download File", "File name cannot be empty.");
+            return;
+        }
+
+        QString curPath = CloudClient::getInstance().getCurPath();
+        fileNameDownload.clear();
+        fileNameDownload = listItem->text();
+
+        downloadFile.setFileName(filePathDownload);
+        if(!downloadFile.open(QIODevice::WriteOnly)){
+            QMessageBox::warning(this, "Download File", QString("Failed to download %1").arg(fileNameDownload));
+            return;
+        }
+
+        pto* sendPto = makePTO(curPath.size()+1);
+        sendPto->msgType = ENUM_MSG_TYPE_DOWNLOAD_FILE_REQUEST;
+        memcpy(sendPto->preData, fileNameDownload.toStdString().c_str(), 32);
+        memcpy(sendPto->data, curPath.toStdString().c_str(), curPath.size());
+        CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
+
+        free(sendPto);
+        sendPto = NULL;
+    }
 }

@@ -4,6 +4,7 @@
 #include <QTcpSocket>
 #include <QFile>
 #include "protocol.h"
+#include <QTimer>
 
 class MyTcpSocket : public QTcpSocket
 {
@@ -17,6 +18,7 @@ public slots:
     void onRecv();
     //when the connection between client and server is off, we set account online status to 0 and emit signals for server to delete this socket
     void socektOff();
+    void sendDownloadFile();
 signals:
     void clientOff(MyTcpSocket*);
 private:
@@ -29,6 +31,9 @@ private:
     bool isUploading;
     char uploadFileName[32];
     int currUploadCount;
+    QTimer downloadTimer;
+    char downloadFileName[32];
+    QFile fileDownload;
 };
 
 #endif // MYTCPSOCKET_H

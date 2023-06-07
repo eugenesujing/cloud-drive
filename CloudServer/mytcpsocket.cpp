@@ -10,6 +10,7 @@ MyTcpSocket::MyTcpSocket()
 {
    connect(this, SIGNAL(readyRead()), this, SLOT(onRecv()));
    connect(this, SIGNAL(disconnected()), this, SLOT(socektOff()));
+   connect(&downloadTimer,SIGNAL(timeout()), this, SLOT(sendDownloadFile()));
    isUploading = false;
 }
 
@@ -424,6 +425,33 @@ void MyTcpSocket::onRecv()
                 delete [] curPath;
                 break;
             }
+            case ENUM_MSG_TYPE_DOWNLOAD_FILE_REQUEST:{
+                char* curPath = new char[recvPto->msgSize];
+                memcpy(curPath, recvPto->data, recvPto->msgSize);
+                memset(downloadFileName,0,32);
+                memcpy(downloadFileName, recvPto->preData, 32);
+                QString filePathDownload = QString("%1/%2").arg(curPath).arg(downloadFileName);
+                QString respondMsg;
+
+                fileDownload.setFileName(filePathDownload);
+                if(!fileDownload.open(QIODevice::ReadOnly)){
+                    respondMsg = QString("Failed to load file %1").arg(downloadFileName);
+                }
+
+                pto* sendPto = makePTO(respondMsg.size()+1);
+                sendPto->msgType = ENUM_MSG_TYPE_DOWNLOAD_FILE_RESPOND;
+                //get the fileSize and send it to the client
+                QString fileSizeString = QString("%1").arg(fileDownload.size());
+                memcpy(sendPto->preData, fileSizeString.toStdString().c_str(),32);
+                memcpy(sendPto->data, respondMsg.toStdString().c_str(),respondMsg.size());
+
+                write((char*)sendPto, sendPto->totalSize);
+                if(respondMsg.size()==0){
+                    downloadTimer.start(1000);
+                }
+
+                break;
+            }
             default:
                 break;
             }
@@ -450,6 +478,34 @@ void MyTcpSocket::socektOff()
     qDebug()<<"SocketName = "<<socketName;
     emit clientOff(this);
     qDebug()<<"Successfully emit clientOff()";
+}
+
+void MyTcpSocket::sendDownloadFile()
+{
+    downloadTimer.stop();
+    QString respondMsg;
+
+    char* buffer= new char[4096];
+    memset(buffer, 0, 4096);
+    qint64 readTotal = 0;
+
+    while(true){
+        readTotal = fileDownload.read(buffer, 4096);
+        if(readTotal>0 && readTotal<=4096){
+            write(buffer,readTotal);
+            qDebug()<<"readTotal="<<readTotal;
+        }else if(readTotal==0){
+
+            break;
+        }else{
+            qDebug()<<"File download size is greater than file size";
+            break;
+        }
+
+    }
+    qDebug()<<"Finish downloading file";
+    fileDownload.close();
+    delete[] buffer;
 }
 
 void MyTcpSocket::respond(QString respondMsg, int ret, ENUM_MSG_TYPE type)

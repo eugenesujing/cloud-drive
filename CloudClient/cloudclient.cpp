@@ -2,6 +2,7 @@
 #include "cloudclient.h"
 #include "ui_cloudclient.h"
 #include "home.h"
+
 #include <QFile>
 #include <QDebug>
 #include <QMessageBox>
@@ -15,6 +16,7 @@ CloudClient::CloudClient(QWidget *parent)
 {
     ui->setupUi(this);
     loadConfig();
+    isDownloading = false;
 
     connect(&mySocket, SIGNAL(connected()),this, SLOT(showConnected()));
     mySocket.connectToHost(QHostAddress(ip),port);
@@ -143,220 +145,247 @@ void CloudClient::on_register_button_clicked()
 void CloudClient::onRecv()
 {
     qDebug()<<"Received a new message";
-    unsigned int ptoSize = 0;
-    //get size of pto first
-    mySocket.read((char*)&ptoSize, sizeof(unsigned int));
-    unsigned int msgSize = ptoSize - sizeof (pto);
-
-    pto* recvPto = makePTO(msgSize);
-    if(recvPto!=NULL){
-        recvPto->totalSize = ptoSize;
-        qDebug()<<"totalSize="<<recvPto->totalSize;
-        mySocket.read((char*)recvPto +sizeof(unsigned int), recvPto->totalSize-sizeof (unsigned int));
-        qDebug()<<"msgType = "<<recvPto->msgType;
-        //handle user request based on message type
-        switch (recvPto->msgType) {
-        case ENUM_MSG_TYPE_REGISTER_RESPOND:{
-            char* respond = (char*)malloc(msgSize+1);
-            memset(respond,0,msgSize+1);
-            memcpy(respond,(char*)recvPto->data,msgSize);
-            if(recvPto->code==1){
-                QMessageBox::information(this, "Register New Account", respond);
-            }else{
-                QMessageBox::warning(this, "Register New Account", respond);
-            }
-            free(respond);
-            respond = NULL;
-            break;
+    if(isDownloading){
+        bool ret = Home::getInstance().getFiles()->writeDownloadFile(fileUploadSoFar, fileTotalSize);
+        if(ret){
+            isDownloading = false;
         }
-        case ENUM_MSG_TYPE_LOGIN_RESPOND:{
+    }else{
+        unsigned int ptoSize = 0;
+        //get size of pto first
+        mySocket.read((char*)&ptoSize, sizeof(unsigned int));
+        unsigned int msgSize = ptoSize - sizeof (pto);
 
-            if(recvPto->code!=1){
+        pto* recvPto = makePTO(msgSize);
+        if(recvPto!=NULL){
+            recvPto->totalSize = ptoSize;
+            qDebug()<<"totalSize="<<recvPto->totalSize;
+            mySocket.read((char*)recvPto +sizeof(unsigned int), recvPto->totalSize-sizeof (unsigned int));
+            qDebug()<<"msgType = "<<recvPto->msgType;
+            //handle user request based on message type
+            switch (recvPto->msgType) {
+            case ENUM_MSG_TYPE_REGISTER_RESPOND:{
                 char* respond = (char*)malloc(msgSize+1);
                 memset(respond,0,msgSize+1);
                 memcpy(respond,(char*)recvPto->data,msgSize);
-                QMessageBox::warning(this, "Log In", respond);
+                if(recvPto->code==1){
+                    QMessageBox::information(this, "Register New Account", respond);
+                }else{
+                    QMessageBox::warning(this, "Register New Account", respond);
+                }
                 free(respond);
                 respond = NULL;
-                loginName.clear();
-            }else{
-                //load friendlist after login
-                loadFriendList();
-                //set curPath as user's personal folder
-                curPath = QString("./%1").arg(loginName);
-                Home::getInstance().show();
-                hide();
-                qDebug()<<"Login successfully.";
+                break;
             }
+            case ENUM_MSG_TYPE_LOGIN_RESPOND:{
 
-            break;
-        }
-        case ENUM_MSG_TYPE_SHOW_ONLINE_RESPOND:{
-            Home::getInstance().getFriend()->handleShowOnlineResult(recvPto);
+                if(recvPto->code!=1){
+                    char* respond = (char*)malloc(msgSize+1);
+                    memset(respond,0,msgSize+1);
+                    memcpy(respond,(char*)recvPto->data,msgSize);
+                    QMessageBox::warning(this, "Log In", respond);
+                    free(respond);
+                    respond = NULL;
+                    loginName.clear();
+                }else{
+                    //load friendlist after login
+                    loadFriendList();
+                    //set curPath as user's personal folder
+                    curPath = QString("./%1").arg(loginName);
+                    Home::getInstance().show();
+                    hide();
+                    qDebug()<<"Login successfully.";
+                }
 
-            break;
-        }
-        case ENUM_MSG_TYPE_SEARCH_USER_RESPOND:{
-            char* respond = (char*)malloc(msgSize+1);
-            memset(respond,0,msgSize+1);
-            memcpy(respond,(char*)recvPto->data,msgSize);
-            if(recvPto->code>=0){
-                QMessageBox::information(this, "Search User Result", respond);
-            }else{
-                QMessageBox::warning(this, "Search User Result", respond);
+                break;
             }
-            free(respond);
-            respond = NULL;
-            break;
-        }
-        case ENUM_MSG_TYPE_ADD_FRIEND_RESPOND:{
-            char* respond = (char*)malloc(msgSize+1);
-            memset(respond,0,msgSize+1);
-            memcpy(respond,(char*)recvPto->data,msgSize);
-            if(recvPto->code == -1){
-                QMessageBox::warning(this, "Add Friend Request", respond);
-            }else{
-                QMessageBox::information(this, "Add Friend Request", respond);
-            }
-            free(respond);
-            respond = NULL;
-            break;
-        }
-        case ENUM_MSG_TYPE_ADD_FRIEND_RESEND_REQUEST:{
-            //char searchName[32] = {' '};
-            char loginName[32] = {' '};
-            //memcpy(searchName, recvPto->preData, 32);
-            memcpy(loginName, recvPto->preData+32, 32);
-            QString req = QString("<%1> would like to connect.").arg(loginName);
-            int ret = QMessageBox::information(this, "New Friend Request", req, QMessageBox::Yes, QMessageBox::No);
-            pto* respPto = makePTO(0);
-            if(respPto==NULL){
-                qDebug()<<"malloc for sendPto failed on ENUM_MSG_TYPE_ADD_FRIEND_RESEND_REQUEST";
-                return;
-            }
-            respPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESEND_RESPOND;
-            respPto->code = ret;
-            memcpy(respPto->preData, recvPto->preData, 64);
+            case ENUM_MSG_TYPE_SHOW_ONLINE_RESPOND:{
+                Home::getInstance().getFriend()->handleShowOnlineResult(recvPto);
 
-            mySocket.write((char*)respPto, respPto->totalSize);
-            free(respPto);
-            respPto = NULL;
-            break;
-        }
-        case ENUM_MSG_TYPE_FRESH_FRIENDLIST_RESPOND:{
-            Home::getInstance().getFriend()->handleLoadFriendList(recvPto);
-            break;
-        }
-        case ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND:{
-            char* respond = (char*)malloc(msgSize+1);
-            memset(respond,0,msgSize+1);
-            memcpy(respond,(char*)recvPto->data,msgSize);
-            if(recvPto->code != 1){
-                QMessageBox::warning(this, "Delete Friend", respond);
-            }else{
-                QMessageBox::information(this, "Delete Friend", respond);
-                //reload friendlist after deletion
-                loadFriendList();
+                break;
             }
+            case ENUM_MSG_TYPE_SEARCH_USER_RESPOND:{
+                char* respond = (char*)malloc(msgSize+1);
+                memset(respond,0,msgSize+1);
+                memcpy(respond,(char*)recvPto->data,msgSize);
+                if(recvPto->code>=0){
+                    QMessageBox::information(this, "Search User Result", respond);
+                }else{
+                    QMessageBox::warning(this, "Search User Result", respond);
+                }
+                free(respond);
+                respond = NULL;
+                break;
+            }
+            case ENUM_MSG_TYPE_ADD_FRIEND_RESPOND:{
+                char* respond = (char*)malloc(msgSize+1);
+                memset(respond,0,msgSize+1);
+                memcpy(respond,(char*)recvPto->data,msgSize);
+                if(recvPto->code == -1){
+                    QMessageBox::warning(this, "Add Friend Request", respond);
+                }else{
+                    QMessageBox::information(this, "Add Friend Request", respond);
+                }
+                free(respond);
+                respond = NULL;
+                break;
+            }
+            case ENUM_MSG_TYPE_ADD_FRIEND_RESEND_REQUEST:{
+                //char searchName[32] = {' '};
+                char loginName[32] = {' '};
+                //memcpy(searchName, recvPto->preData, 32);
+                memcpy(loginName, recvPto->preData+32, 32);
+                QString req = QString("<%1> would like to connect.").arg(loginName);
+                int ret = QMessageBox::information(this, "New Friend Request", req, QMessageBox::Yes, QMessageBox::No);
+                pto* respPto = makePTO(0);
+                if(respPto==NULL){
+                    qDebug()<<"malloc for sendPto failed on ENUM_MSG_TYPE_ADD_FRIEND_RESEND_REQUEST";
+                    return;
+                }
+                respPto->msgType = ENUM_MSG_TYPE_ADD_FRIEND_RESEND_RESPOND;
+                respPto->code = ret;
+                memcpy(respPto->preData, recvPto->preData, 64);
 
-            free(respond);
-            respond = NULL;
-            break;
-        }
-        case ENUM_MSG_TYPE_PRIVATE_MESSAGE_RESPOND:{
-            char friendName[32] = {""};
-            char* msg = (char*)malloc(recvPto->msgSize+1);
-            memset(msg, 0, recvPto->msgSize+1);
-            memcpy(msg, recvPto->data, recvPto->msgSize);
-            memcpy(friendName, recvPto->preData+32, 32);
-            qDebug()<<"friendName="<<friendName<<" message: "<<QString(msg)<<endl;
-            Home::getInstance().getFriend()->newPrivateMessgae(friendName, msg);
-            break;
-        }
-        case ENUM_MSG_TYPE_BROADCAST_RESPOND:{
-            char friendName[32] = {""};
-            char* msg = (char*)malloc(recvPto->msgSize+1);
-            memset(msg, 0, recvPto->msgSize+1);
-            memcpy(msg, recvPto->data, recvPto->msgSize);
-            memcpy(friendName, recvPto->preData, 32);
+                mySocket.write((char*)respPto, respPto->totalSize);
+                free(respPto);
+                respPto = NULL;
+                break;
+            }
+            case ENUM_MSG_TYPE_FRESH_FRIENDLIST_RESPOND:{
+                Home::getInstance().getFriend()->handleLoadFriendList(recvPto);
+                break;
+            }
+            case ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND:{
+                char* respond = (char*)malloc(msgSize+1);
+                memset(respond,0,msgSize+1);
+                memcpy(respond,(char*)recvPto->data,msgSize);
+                if(recvPto->code != 1){
+                    QMessageBox::warning(this, "Delete Friend", respond);
+                }else{
+                    QMessageBox::information(this, "Delete Friend", respond);
+                    //reload friendlist after deletion
+                    loadFriendList();
+                }
 
-            Home::getInstance().getFriend()->newBroadcastMessgae(friendName, msg);
-            break;
-        }
-        case ENUM_MSG_TYPE_NEW_FOLDER_RESPOND:{
-            char* respond = (char*)malloc(msgSize+1);
-            memset(respond,0,msgSize+1);
-            memcpy(respond,(char*)recvPto->data,msgSize);
-            if(recvPto->code != 1){
-                QMessageBox::warning(this, "New Folder", respond);
-            }else{
-                QMessageBox::information(this, "New Folder", respond);
-                Home::getInstance().getFiles()->loadFiles();
+                free(respond);
+                respond = NULL;
+                break;
             }
-            free(respond);
-            respond = NULL;
-            break;
-        }
-        case ENUM_MSG_TYPE_LOAD_FOLDER_RESPOND:{
-            Home::getInstance().getFiles()->updateFileList(recvPto);
-            break;
-        }
-        case ENUM_MSG_TYPE_DELETE_FILE_RESPOND:{
-            char* respond = (char*)malloc(msgSize+1);
-            memset(respond,0,msgSize+1);
-            memcpy(respond,(char*)recvPto->data,msgSize);
-            if(recvPto->code != 1){
-                QMessageBox::warning(this, "Delete File", respond);
-            }else{
-                QMessageBox::information(this, "Delete File", respond);
-                Home::getInstance().getFiles()->loadFiles();
+            case ENUM_MSG_TYPE_PRIVATE_MESSAGE_RESPOND:{
+                char friendName[32] = {""};
+                char* msg = (char*)malloc(recvPto->msgSize+1);
+                memset(msg, 0, recvPto->msgSize+1);
+                memcpy(msg, recvPto->data, recvPto->msgSize);
+                memcpy(friendName, recvPto->preData+32, 32);
+                qDebug()<<"friendName="<<friendName<<" message: "<<QString(msg)<<endl;
+                Home::getInstance().getFriend()->newPrivateMessgae(friendName, msg);
+                break;
             }
-            free(respond);
-            respond = NULL;
-            break;
-        }
-        case ENUM_MSG_TYPE_RENAME_FILE_RESPOND:{
-            char* respond = (char*)malloc(msgSize+1);
-            memset(respond,0,msgSize+1);
-            memcpy(respond,(char*)recvPto->data,msgSize);
-            if(recvPto->code != 1){
-                QMessageBox::warning(this, "Rename File", respond);
-            }else{
-                QMessageBox::information(this, "Rename File", respond);
-                Home::getInstance().getFiles()->loadFiles();
+            case ENUM_MSG_TYPE_BROADCAST_RESPOND:{
+                char friendName[32] = {""};
+                char* msg = (char*)malloc(recvPto->msgSize+1);
+                memset(msg, 0, recvPto->msgSize+1);
+                memcpy(msg, recvPto->data, recvPto->msgSize);
+                memcpy(friendName, recvPto->preData, 32);
+
+                Home::getInstance().getFriend()->newBroadcastMessgae(friendName, msg);
+                break;
             }
-            free(respond);
-            respond = NULL;
-            break;
-        }
-        case ENUM_MSG_TYPE_OPEN_FILE_RESPOND:{
-            if(recvPto->code == 1){
-                char fileName[32] = {""};
-                memcpy(fileName, recvPto->preData, 32);
-                curPath = QString("%1/%2").arg(curPath).arg(fileName);
+            case ENUM_MSG_TYPE_NEW_FOLDER_RESPOND:{
+                char* respond = (char*)malloc(msgSize+1);
+                memset(respond,0,msgSize+1);
+                memcpy(respond,(char*)recvPto->data,msgSize);
+                if(recvPto->code != 1){
+                    QMessageBox::warning(this, "New Folder", respond);
+                }else{
+                    QMessageBox::information(this, "New Folder", respond);
+                    Home::getInstance().getFiles()->loadFiles();
+                }
+                free(respond);
+                respond = NULL;
+                break;
+            }
+            case ENUM_MSG_TYPE_LOAD_FOLDER_RESPOND:{
                 Home::getInstance().getFiles()->updateFileList(recvPto);
-                qDebug()<<"curPath = "<<curPath;
+                break;
             }
-            break;
-        }
-        case ENUM_MSG_TYPE_UPLOAD_FILE_RESPOND:{
-            char* respond = (char*)malloc(msgSize+1);
-            memset(respond,0,msgSize+1);
-            memcpy(respond,(char*)recvPto->data,msgSize);
-            if(recvPto->code != 1){
-                QMessageBox::warning(this, "Upload File", respond);
-            }else{
-                QMessageBox::information(this, "Upload File", respond);
-                Home::getInstance().getFiles()->loadFiles();
+            case ENUM_MSG_TYPE_DELETE_FILE_RESPOND:{
+                char* respond = (char*)malloc(msgSize+1);
+                memset(respond,0,msgSize+1);
+                memcpy(respond,(char*)recvPto->data,msgSize);
+                if(recvPto->code != 1){
+                    QMessageBox::warning(this, "Delete File", respond);
+                }else{
+                    QMessageBox::information(this, "Delete File", respond);
+                    Home::getInstance().getFiles()->loadFiles();
+                }
+                free(respond);
+                respond = NULL;
+                break;
             }
-            free(respond);
-            respond = NULL;
-            break;
+            case ENUM_MSG_TYPE_RENAME_FILE_RESPOND:{
+                char* respond = (char*)malloc(msgSize+1);
+                memset(respond,0,msgSize+1);
+                memcpy(respond,(char*)recvPto->data,msgSize);
+                if(recvPto->code != 1){
+                    QMessageBox::warning(this, "Rename File", respond);
+                }else{
+                    QMessageBox::information(this, "Rename File", respond);
+                    Home::getInstance().getFiles()->loadFiles();
+                }
+                free(respond);
+                respond = NULL;
+                break;
+            }
+            case ENUM_MSG_TYPE_OPEN_FILE_RESPOND:{
+                if(recvPto->code == 1){
+                    char fileName[32] = {""};
+                    memcpy(fileName, recvPto->preData, 32);
+                    curPath = QString("%1/%2").arg(curPath).arg(fileName);
+                    Home::getInstance().getFiles()->updateFileList(recvPto);
+                    qDebug()<<"curPath = "<<curPath;
+                }
+                break;
+            }
+            case ENUM_MSG_TYPE_UPLOAD_FILE_RESPOND:{
+                char* respond = (char*)malloc(msgSize+1);
+                memset(respond,0,msgSize+1);
+                memcpy(respond,(char*)recvPto->data,msgSize);
+                if(recvPto->code != 1){
+                    QMessageBox::warning(this, "Upload File", respond);
+                }else{
+                    QMessageBox::information(this, "Upload File", respond);
+                    Home::getInstance().getFiles()->loadFiles();
+                }
+                free(respond);
+                respond = NULL;
+                break;
+            }
+            case ENUM_MSG_TYPE_DOWNLOAD_FILE_RESPOND:{
+                //if there is an error msg
+                if(msgSize!=0){
+                    char* respond = (char*)malloc(msgSize+1);
+                    memset(respond,0,msgSize+1);
+                    memcpy(respond,(char*)recvPto->data,msgSize);
+                    QMessageBox::warning(this, "Download File", respond);
+                    free(respond);
+                    respond = NULL;
+                }else{
+                    qint64 fileSize = 0;
+                    sscanf(recvPto->preData+32, "%lld",&fileSize);
+                    fileUploadSoFar = 0;
+                    fileTotalSize = fileSize;
+                    isDownloading = true;
+                }
+                break;
+
+            }
+            default:
+                break;
+            }
+          free(recvPto);
+          recvPto = NULL;
         }
-        default:
-            break;
-        }
-      free(recvPto);
-      recvPto = NULL;
     }
+
 }

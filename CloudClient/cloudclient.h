@@ -46,6 +46,9 @@ private:
     QString curPath;
     //Load config from resource file
     void loadConfig();
+    bool isDownloading;
+    qint64 fileUploadSoFar;
+    qint64 fileTotalSize;
 
 };
 #endif // CLOUDCLIENT_H

@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QTimer>
 #include  "protocol.h"
+#include <QFile>
 
 namespace Ui {
 class Files;
@@ -20,6 +21,7 @@ public:
     static Files& getInstance();
     void loadFiles();
     void updateFileList(pto* recvPto);
+    bool writeDownloadFile(qint64 fileUploadSoFar, qint64 fileTotalSize);
 private slots:
     void on_newFolderPB_clicked();
 
@@ -39,11 +41,15 @@ private slots:
 
     void uploadBegin();
 
+    void on_downloadPB_clicked();
+
 private:
     Ui::Files *ui;
     void deleteListItem();
     QTimer   timer;
     QString filePathUpload;
+    QString fileNameDownload;
+    QFile downloadFile;
 
 };
 
