@@ -79,6 +79,16 @@ void Friend::newBroadcastMessgae(const char* friendName,char *message)
     message =NULL;
 }
 
+QStringList Friend::getFriendList()
+{
+    QStringList friendList;
+    int count = ui->friendList->count();
+    for(int i=0; i<count; i++){
+        friendList.append(ui->friendList->item(i)->text());
+    }
+    return friendList;
+}
+
 void Friend::newPrivateMessgae(const char *friendName, char *message)
 {
     if(friendName == NULL || message == NULL) return;

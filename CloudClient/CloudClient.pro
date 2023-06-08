@@ -23,7 +23,8 @@ SOURCES += \
     cloudclient.cpp \
     online.cpp \
     privatemessage.cpp \
-    protocol.cpp
+    protocol.cpp \
+    sharefile.cpp
 
 HEADERS += \
     cloudclient.h \
@@ -32,14 +33,16 @@ HEADERS += \
     home.h \
     online.h \
     privatemessage.h \
-    protocol.h
+    protocol.h \
+    sharefile.h
 
 FORMS += \
     cloudclient.ui \
     files.ui \
     friend.ui \
     online.ui \
-    privatemessage.ui
+    privatemessage.ui \
+    sharefile.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

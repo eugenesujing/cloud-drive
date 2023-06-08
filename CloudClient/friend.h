@@ -23,6 +23,7 @@ public:
 
     void newPrivateMessgae(const char* friendName,char* message);
     void newBroadcastMessgae(const char* friendName,char* message);
+    QStringList getFriendList();
 public slots:
     void showOnline();
 private slots:

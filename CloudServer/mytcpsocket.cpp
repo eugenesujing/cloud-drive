@@ -438,13 +438,13 @@ void MyTcpSocket::onRecv()
                     respondMsg = QString("Failed to load file %1").arg(downloadFileName);
                 }
 
-                pto* sendPto = makePTO(respondMsg.size()+1);
+                pto* sendPto = makePTO(respondMsg.size());
                 sendPto->msgType = ENUM_MSG_TYPE_DOWNLOAD_FILE_RESPOND;
                 //get the fileSize and send it to the client
                 QString fileSizeString = QString("%1").arg(fileDownload.size());
                 memcpy(sendPto->preData, fileSizeString.toStdString().c_str(),32);
                 memcpy(sendPto->data, respondMsg.toStdString().c_str(),respondMsg.size());
-
+                qDebug()<<"fileSize="<<fileSizeString;
                 write((char*)sendPto, sendPto->totalSize);
                 if(respondMsg.size()==0){
                     downloadTimer.start(1000);

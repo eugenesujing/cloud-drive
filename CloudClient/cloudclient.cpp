@@ -372,10 +372,11 @@ void CloudClient::onRecv()
                     respond = NULL;
                 }else{
                     qint64 fileSize = 0;
-                    sscanf(recvPto->preData+32, "%lld",&fileSize);
+                    sscanf(recvPto->preData, "%lld",&fileSize);
                     fileUploadSoFar = 0;
                     fileTotalSize = fileSize;
                     isDownloading = true;
+                    qDebug()<<"fileTotalSize="<<fileTotalSize;
                 }
                 break;
 

@@ -10,6 +10,7 @@ Files::Files(QWidget *parent) :
     ui(new Ui::Files)
 {
     ui->setupUi(this);
+    sFile = NULL;
     connect(ui->listWidget, SIGNAL(doubleClicked(QModelIndex)),this, SLOT(on_double_clicked(QModelIndex)));
     connect(&timer, SIGNAL(timeout()), this, SLOT(uploadBegin()));
 }
@@ -17,6 +18,7 @@ Files::Files(QWidget *parent) :
 Files::~Files()
 {
     deleteListItem();
+    delete sFile;
     delete ui;
 }
 
@@ -334,4 +336,10 @@ void Files::on_downloadPB_clicked()
         free(sendPto);
         sendPto = NULL;
     }
+}
+
+void Files::on_sharePB_clicked()
+{
+    sFile = new ShareFile;
+    sFile->show();
 }

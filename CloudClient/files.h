@@ -3,8 +3,9 @@
 
 #include <QWidget>
 #include <QTimer>
-#include  "protocol.h"
 #include <QFile>
+#include  "protocol.h"
+#include "sharefile.h"
 
 namespace Ui {
 class Files;
@@ -43,6 +44,8 @@ private slots:
 
     void on_downloadPB_clicked();
 
+    void on_sharePB_clicked();
+
 private:
     Ui::Files *ui;
     void deleteListItem();
@@ -50,6 +53,7 @@ private:
     QString filePathUpload;
     QString fileNameDownload;
     QFile downloadFile;
+    ShareFile* sFile;
 
 };
 
