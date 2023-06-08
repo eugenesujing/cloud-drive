@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QButtonGroup>
+#include <QVBoxLayout>
 
 namespace Ui {
 class ShareFile;
@@ -16,11 +17,16 @@ public:
     explicit ShareFile(QWidget *parent = nullptr);
     ~ShareFile();
 
+private slots:
+    void on_selectAll_clicked();
+
+    void on_clearSelection_clicked();
+
 private:
     Ui::ShareFile *ui;
     QWidget* friendList;
     QButtonGroup* buttonGroup;
-
+    QVBoxLayout *vLayout;
     void updateFriendList();
 };
 
