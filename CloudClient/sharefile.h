@@ -16,17 +16,23 @@ class ShareFile : public QWidget
 public:
     explicit ShareFile(QWidget *parent = nullptr);
     ~ShareFile();
+    void setFileName(QString name);
 
 private slots:
     void on_selectAll_clicked();
 
     void on_clearSelection_clicked();
 
+    void on_cancel_clicked();
+
+    void on_share_clicked();
+
 private:
     Ui::ShareFile *ui;
     QWidget* friendList;
     QButtonGroup* buttonGroup;
     QVBoxLayout *vLayout;
+    QString fileName;
     void updateFriendList();
 };
 

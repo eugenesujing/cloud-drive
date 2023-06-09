@@ -23,6 +23,7 @@ public:
     void loadFiles();
     void updateFileList(pto* recvPto);
     bool writeDownloadFile(qint64 fileUploadSoFar, qint64 fileTotalSize);
+    void hideShareFile();
 private slots:
     void on_newFolderPB_clicked();
 

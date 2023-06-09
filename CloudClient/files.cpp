@@ -150,6 +150,11 @@ bool Files::writeDownloadFile(qint64 fileUploadSoFar, qint64 fileTotalSize)
     return false;
 }
 
+void Files::hideShareFile()
+{
+    sFile->hide();
+}
+
 void Files::on_deletePB_clicked()
 {
     QListWidgetItem* listItem  = ui->listWidget->currentItem();
@@ -340,6 +345,8 @@ void Files::on_downloadPB_clicked()
 
 void Files::on_sharePB_clicked()
 {
+    QListWidgetItem* listItem  = ui->listWidget->currentItem();
     sFile = new ShareFile;
+    sFile->setFileName(listItem->text());
     sFile->show();
 }

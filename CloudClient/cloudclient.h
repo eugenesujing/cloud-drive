@@ -23,6 +23,8 @@ public:
     void loadFriendList();
     QString getCurPath()const;
     void setCurPath(QString newPath);
+    //Send a request to the server and share the file 'fileName' with friends in 'checkedFriendsName'
+    void startShareFile(QStringList checkedFriendsName, QString fileName);
 public slots:
     //Inform user when client is connected to server successfully
     void showConnected();

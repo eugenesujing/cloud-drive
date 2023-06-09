@@ -1,8 +1,10 @@
  #include "sharefile.h"
 #include "ui_sharefile.h"
+#include "cloudclient.h"
 #include "home.h"
 #include <QCheckBox>
 #include <QDebug>
+#include <QMessageBox>
 
 ShareFile::ShareFile(QWidget *parent) :
     QWidget(parent),
@@ -23,6 +25,11 @@ ShareFile::ShareFile(QWidget *parent) :
 ShareFile::~ShareFile()
 {
     delete ui;
+}
+
+void ShareFile::setFileName(QString name)
+{
+    fileName = name;
 }
 
 void ShareFile::updateFriendList()
@@ -72,4 +79,29 @@ void ShareFile::on_clearSelection_clicked()
     while(buttonGroup->checkedButton()!= nullptr){
         buttonGroup->checkedButton()->setChecked(false);
     }
+}
+
+void ShareFile::on_cancel_clicked()
+{
+    Home::getInstance().getFiles()->hideShareFile();
+}
+
+void ShareFile::on_share_clicked()
+{
+    QStringList checkedFriendsName;
+    QList<QAbstractButton*> buttons = buttonGroup->buttons();
+    if(buttonGroup->checkedButton()!= nullptr){
+        QMessageBox::warning(this, "Share File", "Please select a friend.");
+        return;
+    }
+
+    for(int j=0; j<buttons.size(); j++){
+        qDebug()<<"j="<<j;
+        QAbstractButton* temp =buttons[j];
+        if(temp->isChecked()){
+            checkedFriendsName.append(temp->text());
+        }
+    }
+
+    CloudClient::getInstance().startShareFile(checkedFriendsName, fileName);
 }

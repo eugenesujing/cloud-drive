@@ -96,6 +96,27 @@ void CloudClient::setCurPath(QString newPath)
     curPath = newPath;
 }
 
+//Send a request to the server and share the file 'fileName' with friends in 'checkedFriendsName'
+void CloudClient::startShareFile(QStringList checkedFriendsName, QString fileName)
+{
+    if(checkedFriendsName.size()==0){
+        QMessageBox::warning(this, "Share File", "Please select a friend.");
+        return;
+    }
+    int numberOfFriends = checkedFriendsName.size();
+    QString fileFullPath = curPath+'/'+fileName;
+    int msgLen = numberOfFriends*32 + fileFullPath.size() +1;
+    pto* newPto =makePTO(msgLen);
+    newPto->msgType = ENUM_MSG_TYPE_SHARE_FILE_REQUEST;
+    memcpy(newPto->preData, loginName.toStdString().c_str(), 32);
+    sprintf(newPto->preData+32, "%d", numberOfFriends);
+    for(int i=0; i<numberOfFriends; i++){
+        memcpy(newPto->data +32*i, checkedFriendsName[i].toStdString().c_str(), 32);
+    }
+    memcpy(newPto->data +32*numberOfFriends, fileFullPath.toStdString().c_str(), fileFullPath.size());
+
+}
+
 
 void CloudClient::on_login_button_clicked()
 {
