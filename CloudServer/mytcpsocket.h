@@ -24,7 +24,7 @@ signals:
 private:
     QString socketName;
     void respond(QString respondMsg, int ret, ENUM_MSG_TYPE type);
-    void loadFolder(QString fullPath, bool isOpen = false, QString fileName =NULL);
+    void loadFolder(QString fullPath, int code, bool isOpen = false, QString fileName =NULL);
     QFile uploadFile;
     long long fileUploadSoFar;
     long long fileTotalSize;

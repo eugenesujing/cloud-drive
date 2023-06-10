@@ -5,6 +5,7 @@
 #include <QButtonGroup>
 #include <QVBoxLayout>
 
+
 namespace Ui {
 class ShareFile;
 }

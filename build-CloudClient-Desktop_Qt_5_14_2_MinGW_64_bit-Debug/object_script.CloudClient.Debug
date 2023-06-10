@@ -6,6 +6,7 @@ debug/cloudclient.o
 debug/online.o
 debug/privatemessage.o
 debug/protocol.o
+debug/savefile.o
 debug/sharefile.o
 debug/qrc_config.o
 debug/qrc_fileTpye.o
@@ -15,4 +16,5 @@ debug/moc_friend.o
 debug/moc_home.o
 debug/moc_online.o
 debug/moc_privatemessage.o
+debug/moc_savefile.o
 debug/moc_sharefile.o

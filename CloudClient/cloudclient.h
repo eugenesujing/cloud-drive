@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QTcpSocket>
+#include "savefile.h"
 
 
 QT_BEGIN_NAMESPACE
@@ -46,11 +47,13 @@ private:
     QTcpSocket mySocket;
     QString loginName;
     QString curPath;
-    //Load config from resource file
-    void loadConfig();
+
     bool isDownloading;
     qint64 fileUploadSoFar;
     qint64 fileTotalSize;
+    SaveFile* saveFile;
+    //Load config from resource file
+    void loadConfig();
 
 };
 #endif // CLOUDCLIENT_H

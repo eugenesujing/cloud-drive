@@ -24,6 +24,7 @@ SOURCES += \
     online.cpp \
     privatemessage.cpp \
     protocol.cpp \
+    savefile.cpp \
     sharefile.cpp
 
 HEADERS += \
@@ -34,6 +35,7 @@ HEADERS += \
     online.h \
     privatemessage.h \
     protocol.h \
+    savefile.h \
     sharefile.h
 
 FORMS += \
@@ -42,6 +44,7 @@ FORMS += \
     friend.ui \
     online.ui \
     privatemessage.ui \
+    savefile.ui \
     sharefile.ui
 
 # Default rules for deployment.

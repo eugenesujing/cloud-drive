@@ -20,6 +20,7 @@ ShareFile::ShareFile(QWidget *parent) :
     vLayout = new QVBoxLayout(friendList);
     vLayout->setAlignment(Qt::AlignTop);
     updateFriendList();
+
 }
 
 ShareFile::~ShareFile()
@@ -90,7 +91,7 @@ void ShareFile::on_share_clicked()
 {
     QStringList checkedFriendsName;
     QList<QAbstractButton*> buttons = buttonGroup->buttons();
-    if(buttonGroup->checkedButton()!= nullptr){
+    if(buttonGroup->checkedButton()== nullptr){
         QMessageBox::warning(this, "Share File", "Please select a friend.");
         return;
     }
@@ -104,4 +105,5 @@ void ShareFile::on_share_clicked()
     }
 
     CloudClient::getInstance().startShareFile(checkedFriendsName, fileName);
+    Home::getInstance().getFiles()->hideShareFile();
 }

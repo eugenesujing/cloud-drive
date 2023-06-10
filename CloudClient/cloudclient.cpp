@@ -9,6 +9,7 @@
 #include <QHostAddress>
 #include <QString>
 #include <QDir>
+#include <QFileDialog>
 
 CloudClient::CloudClient(QWidget *parent)
     : QWidget(parent)
@@ -21,6 +22,8 @@ CloudClient::CloudClient(QWidget *parent)
     connect(&mySocket, SIGNAL(connected()),this, SLOT(showConnected()));
     mySocket.connectToHost(QHostAddress(ip),port);
     connect(&mySocket, SIGNAL(readyRead()), this, SLOT(onRecv()));
+
+    saveFile = new SaveFile;
 }
 
 CloudClient::~CloudClient()
@@ -114,6 +117,7 @@ void CloudClient::startShareFile(QStringList checkedFriendsName, QString fileNam
         memcpy(newPto->data +32*i, checkedFriendsName[i].toStdString().c_str(), 32);
     }
     memcpy(newPto->data +32*numberOfFriends, fileFullPath.toStdString().c_str(), fileFullPath.size());
+    mySocket.write((char*)newPto, newPto->totalSize);
 
 }
 
@@ -327,7 +331,12 @@ void CloudClient::onRecv()
                 break;
             }
             case ENUM_MSG_TYPE_LOAD_FOLDER_RESPOND:{
-                Home::getInstance().getFiles()->updateFileList(recvPto);
+                if(recvPto->code == 0){
+                    Home::getInstance().getFiles()->updateFileList(recvPto);
+                }else if(recvPto->code == 1){
+                    saveFile->updateFileList(recvPto);
+                }
+
                 break;
             }
             case ENUM_MSG_TYPE_DELETE_FILE_RESPOND:{
@@ -359,13 +368,13 @@ void CloudClient::onRecv()
                 break;
             }
             case ENUM_MSG_TYPE_OPEN_FILE_RESPOND:{
-                if(recvPto->code == 1){
-                    char fileName[32] = {""};
-                    memcpy(fileName, recvPto->preData, 32);
-                    curPath = QString("%1/%2").arg(curPath).arg(fileName);
-                    Home::getInstance().getFiles()->updateFileList(recvPto);
-                    qDebug()<<"curPath = "<<curPath;
-                }
+
+                char fileName[32] = {""};
+                memcpy(fileName, recvPto->preData, 32);
+                curPath = QString("%1/%2").arg(curPath).arg(fileName);
+                Home::getInstance().getFiles()->updateFileList(recvPto);
+                qDebug()<<"curPath = "<<curPath;
+
                 break;
             }
             case ENUM_MSG_TYPE_UPLOAD_FILE_RESPOND:{
@@ -401,6 +410,39 @@ void CloudClient::onRecv()
                 }
                 break;
 
+            }
+            case ENUM_MSG_TYPE_SHARE_FILE_RESEND_REQUEST:{
+                char sender[32] = {""};
+                int numberOfReceivers = 0;
+                memcpy(sender, recvPto->preData, 32);
+                sscanf(recvPto->preData +32, "%d", &numberOfReceivers);
+
+                QString filePath(recvPto->data+ 32*numberOfReceivers);
+
+                int lastIndex = filePath.lastIndexOf('/');
+                QString fileName = filePath.right(filePath.size()-lastIndex-1);
+                int ret = QMessageBox::information(this, "Share File Request", QString("%1 would like to share file <%2>.").arg(sender).arg(fileName), QMessageBox::Yes, QMessageBox::No);
+                if(ret){
+                    saveFile->show();
+                }else{
+                    QString respondMsg = QString("%1 refused your share file request.").arg(loginName);
+                    pto* respondPto = makePTO(respondMsg.size()+1);
+                    respondPto->msgType = ENUM_MSG_TYPE_SHARE_FILE_RESEND_RESPOND;
+                    memcpy(respondPto->preData, sender, 32);
+                    memcpy(respondPto->data,respondMsg.toStdString().c_str(), respondMsg.size());
+                    respondPto->code = 0;
+                    mySocket.write((char*)respondPto, respondPto->totalSize);
+                }
+                break;
+            }
+            case ENUM_MSG_TYPE_SHARE_FILE_RESPOND:{
+                char* respond = (char*)malloc(msgSize+1);
+                memset(respond,0,msgSize+1);
+                memcpy(respond,(char*)recvPto->data,msgSize);
+                QMessageBox::information(this, "Share File Request", respond);
+                free(respond);
+                respond = NULL;
+                break;
             }
             default:
                 break;

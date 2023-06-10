@@ -16,7 +16,7 @@ public:
     static MyTcpServer& getInstance();
 
     void incomingConnection(qintptr handle);
-    void resend(const char* name, pto* sendPTO);
+    void resend(const char* name, pto* sendPTO, bool freePTO = false);
     void broadcast(pto* broadcastPTO);
 public slots:
     void freeSocket(MyTcpSocket* mySocket);

@@ -23,7 +23,7 @@ void MyTcpServer::incomingConnection(qintptr handle)
     socketList.append(newSocket);
 }
 
-void MyTcpServer::resend(const char *name, pto *sendPTO)
+void MyTcpServer::resend(const char *name, pto *sendPTO, bool freePTO)
 {
     if(name == NULL || sendPTO == NULL){
         return;
@@ -35,8 +35,10 @@ void MyTcpServer::resend(const char *name, pto *sendPTO)
             break;
         }
     }
-    free(sendPTO);
-    sendPTO = NULL;
+    if(freePTO == false){
+        free(sendPTO);
+        sendPTO = NULL;
+    }
 }
 
 void MyTcpServer::broadcast(pto *broadcastPTO)

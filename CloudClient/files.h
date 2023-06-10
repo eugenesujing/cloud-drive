@@ -50,7 +50,7 @@ private slots:
 private:
     Ui::Files *ui;
     void deleteListItem();
-    QTimer   timer;
+    QTimer timer;
     QString filePathUpload;
     QString fileNameDownload;
     QFile downloadFile;

@@ -92,6 +92,7 @@ void Files::loadFiles()
     }
     memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
     sendPto->msgType = ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST;
+    sendPto->code = 0; // code 0 represents file system, 1 represents savefile system
     CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
     free(sendPto);
     sendPto = NULL;
@@ -216,6 +217,7 @@ void Files::on_double_clicked(const QModelIndex& index)
     memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
     memcpy(sendPto->preData, fileName.toStdString().c_str(), fileName.size());
     sendPto->msgType = ENUM_MSG_TYPE_OPEN_FILE_REQUEST;
+    sendPto->code = 0;
     CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
     free(sendPto);
     sendPto = NULL;

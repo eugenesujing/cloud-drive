@@ -324,7 +324,7 @@ void MyTcpSocket::onRecv()
             case ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST:{
                 char* curPath = new char[recvPto->msgSize];
                 memcpy(curPath, recvPto->data, recvPto->msgSize);
-                loadFolder(curPath);
+                loadFolder(curPath, recvPto->code);
                 delete [] curPath;
                 break;
             }
@@ -391,7 +391,7 @@ void MyTcpSocket::onRecv()
 
                 QFileInfo info(fullPath);
                 if(info.isDir()){
-                    loadFolder(fullPath, true, fileName);
+                    loadFolder(fullPath, recvPto->code, true, fileName);
                 }else if(info.isFile()){
                     //download file
                 }
@@ -450,6 +450,26 @@ void MyTcpSocket::onRecv()
                     downloadTimer.start(1000);
                 }
 
+                break;
+            }
+            case ENUM_MSG_TYPE_SHARE_FILE_REQUEST:{
+                char sender[32] = {""};
+                int numberOfReceivers = 0;
+                memcpy(sender, recvPto->preData, 32);
+                qDebug()<<"here";
+                sscanf(recvPto->preData +32, "%d", &numberOfReceivers);
+                recvPto->msgType = ENUM_MSG_TYPE_SHARE_FILE_RESEND_REQUEST;
+                qDebug()<<"here";
+                for(int i=0; i<numberOfReceivers; i++){
+                    char temp[32] = {""};
+                    memcpy(temp,recvPto->data +32*i,32);
+                    if(operDB::getInstance().handleSearchUser(temp)==1){
+                        QString respondMsg = QString("%1 is not online. Please try again later.").arg(temp);
+                        respond(respondMsg, 0, ENUM_MSG_TYPE_SHARE_FILE_RESPOND);
+                    }
+                    MyTcpServer::getInstance().resend(temp, recvPto, true);
+                }
+                qDebug()<<"here";
                 break;
             }
             default:
@@ -524,7 +544,8 @@ void MyTcpSocket::respond(QString respondMsg, int ret, ENUM_MSG_TYPE type)
     respPto = NULL;
 }
 
-void MyTcpSocket::loadFolder(QString fullPath, bool isOpen, QString fileName)
+//isOpen decides if its a load folder request or open file request
+void MyTcpSocket::loadFolder(QString fullPath,int code, bool isOpen, QString fileName)
 {
     QDir dir(fullPath);
     QFileInfoList fileInfoList = dir.entryInfoList();
@@ -538,7 +559,6 @@ void MyTcpSocket::loadFolder(QString fullPath, bool isOpen, QString fileName)
     fileInfo* pInfo = NULL;
     if(isOpen){
         memcpy(respPto->preData, fileName.toStdString().c_str(), fileName.size());
-        respPto->code = 1;
         respPto->msgType = ENUM_MSG_TYPE_OPEN_FILE_RESPOND;
     }
     for(int i=0; i <fileCount; i++){
@@ -550,6 +570,7 @@ void MyTcpSocket::loadFolder(QString fullPath, bool isOpen, QString fileName)
             pInfo->fileType = 1;
         }
     }
+    respPto->code = code;
     write((char*)respPto, respPto->totalSize);
     free(respPto);
     respPto = NULL;
