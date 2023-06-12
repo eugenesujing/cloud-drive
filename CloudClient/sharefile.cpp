@@ -49,8 +49,6 @@ void ShareFile::updateFriendList()
     QStringList friends = Home::getInstance().getFriend()->getFriendList();
 
     QCheckBox* check = NULL;
-
-
     for(int i=0; i<friends.size(); i++){
 
         check = new QCheckBox(friends[i]);
@@ -60,11 +58,7 @@ void ShareFile::updateFriendList()
         vLayout->addWidget(check);
 
         buttonGroup->addButton(check);
-
     }
-
-
-
 }
 
 void ShareFile::on_selectAll_clicked()
@@ -72,7 +66,6 @@ void ShareFile::on_selectAll_clicked()
     for(auto button:buttonGroup->buttons()){
         button->setChecked(true);
     }
-
 }
 
 void ShareFile::on_clearSelection_clicked()

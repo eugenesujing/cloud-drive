@@ -23,7 +23,7 @@ CloudClient::CloudClient(QWidget *parent)
     mySocket.connectToHost(QHostAddress(ip),port);
     connect(&mySocket, SIGNAL(readyRead()), this, SLOT(onRecv()));
 
-    saveFile = new SaveFile;
+
 }
 
 CloudClient::~CloudClient()
@@ -320,21 +320,27 @@ void CloudClient::onRecv()
                 char* respond = (char*)malloc(msgSize+1);
                 memset(respond,0,msgSize+1);
                 memcpy(respond,(char*)recvPto->data,msgSize);
-                if(recvPto->code != 1){
+                if(recvPto->code == 0){
                     QMessageBox::warning(this, "New Folder", respond);
                 }else{
                     QMessageBox::information(this, "New Folder", respond);
-                    Home::getInstance().getFiles()->loadFiles();
+                    if(recvPto->code == 1){
+                        Home::getInstance().getFiles()->loadFiles();
+                    }else if(recvPto->code == 2){
+                        Home::getInstance().getSavaFile()->loadFolder();
+                    }
+
                 }
                 free(respond);
                 respond = NULL;
                 break;
             }
             case ENUM_MSG_TYPE_LOAD_FOLDER_RESPOND:{
+                qDebug()<<"load folder code = "<<recvPto->code;
                 if(recvPto->code == 0){
                     Home::getInstance().getFiles()->updateFileList(recvPto);
                 }else if(recvPto->code == 1){
-                    saveFile->updateFileList(recvPto);
+                    Home::getInstance().getSavaFile()->updateFileList(recvPto);
                 }
 
                 break;
@@ -368,12 +374,18 @@ void CloudClient::onRecv()
                 break;
             }
             case ENUM_MSG_TYPE_OPEN_FILE_RESPOND:{
-
                 char fileName[32] = {""};
                 memcpy(fileName, recvPto->preData, 32);
-                curPath = QString("%1/%2").arg(curPath).arg(fileName);
-                Home::getInstance().getFiles()->updateFileList(recvPto);
-                qDebug()<<"curPath = "<<curPath;
+                if(recvPto->code==0){
+
+                    curPath = QString("%1/%2").arg(curPath).arg(fileName);
+                    Home::getInstance().getFiles()->updateFileList(recvPto);
+
+
+                }else if(recvPto->code == 1){
+                    Home::getInstance().getSavaFile()->setCurPath(fileName);
+                    Home::getInstance().getSavaFile()->updateFileList(recvPto);
+                }
 
                 break;
             }
@@ -422,11 +434,17 @@ void CloudClient::onRecv()
                 int lastIndex = filePath.lastIndexOf('/');
                 QString fileName = filePath.right(filePath.size()-lastIndex-1);
                 int ret = QMessageBox::information(this, "Share File Request", QString("%1 would like to share file <%2>.").arg(sender).arg(fileName), QMessageBox::Yes, QMessageBox::No);
-                if(ret){
-                    saveFile->show();
+                if(ret==QMessageBox::Yes){
+                    Home::getInstance().getSavaFile()->init(sender,filePath, fileName);
+                    Home::getInstance().getSavaFile()->show();
                 }else{
+                    qDebug()<<"ret == no";
                     QString respondMsg = QString("%1 refused your share file request.").arg(loginName);
                     pto* respondPto = makePTO(respondMsg.size()+1);
+                    if(respondPto==NULL){
+                        qDebug()<<"malloc for sendPto failed on ENUM_MSG_TYPE_SHARE_FILE_RESEND_REQUEST";
+                        return;
+                    }
                     respondPto->msgType = ENUM_MSG_TYPE_SHARE_FILE_RESEND_RESPOND;
                     memcpy(respondPto->preData, sender, 32);
                     memcpy(respondPto->data,respondMsg.toStdString().c_str(), respondMsg.size());

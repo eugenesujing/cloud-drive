@@ -18,10 +18,13 @@ Home::Home(QWidget *parent) : QWidget(parent)
     mainLayout->addWidget(wlist,1);
     mainLayout->addWidget(sWidget,5);
 
+    saveFile = new SaveFile();
+    saveFile->hide();
+
     setLayout(mainLayout);
 
     connect(wlist, SIGNAL(currentRowChanged(int)), sWidget, SLOT(setCurrentIndex(int)));
-    connect(wlist, SIGNAL(currentRowChanged(int)), filesWidget, SLOT(on_switch_to_files_widget(int)));
+    connect(wlist, SIGNAL(currentRowChanged(int)), filesWidget, SLOT(switch_to_files_widget(int)));
 }
 
 Home &Home::getInstance()
@@ -38,4 +41,9 @@ Friend *Home::getFriend() const
 Files *Home::getFiles() const
 {
     return filesWidget;
+}
+
+SaveFile *Home::getSavaFile() const
+{
+    return saveFile;
 }

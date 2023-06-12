@@ -29,13 +29,13 @@ private slots:
 
     void on_freshPB_clicked();
 
-    void on_switch_to_files_widget(int currRow);
+    void switch_to_files_widget(int currRow);
 
     void on_deletePB_clicked();
 
     void on_renamePB_clicked();
 
-    void on_double_clicked(const QModelIndex& index);
+    void double_clicked(const QModelIndex& index);
 
     void on_backPB_clicked();
 

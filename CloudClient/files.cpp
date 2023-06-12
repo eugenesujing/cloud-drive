@@ -11,7 +11,7 @@ Files::Files(QWidget *parent) :
 {
     ui->setupUi(this);
     sFile = NULL;
-    connect(ui->listWidget, SIGNAL(doubleClicked(QModelIndex)),this, SLOT(on_double_clicked(QModelIndex)));
+    connect(ui->listWidget, SIGNAL(doubleClicked(QModelIndex)),this, SLOT(double_clicked(QModelIndex)));
     connect(&timer, SIGNAL(timeout()), this, SLOT(uploadBegin()));
 }
 
@@ -36,7 +36,7 @@ void Files::on_newFolderPB_clicked()
         if(folderName.size()>32){
             QMessageBox::warning(qid, "New folder", "Folder name must be less than 32 characters");
         }else{
-            QString loginName = CloudClient::getInstance().getLoginName();
+
             QString curPath = CloudClient::getInstance().getCurPath();
             pto* sendPto = makePTO(curPath.size());
             if(sendPto==NULL){
@@ -44,9 +44,10 @@ void Files::on_newFolderPB_clicked()
                 return;
             }
             sendPto->msgType = ENUM_MSG_TYPE_NEW_FOLDER_REQUEST;
-            memcpy(sendPto->preData, loginName.toStdString().c_str(),32);
-            memcpy(sendPto->preData+32, folderName.toStdString().c_str(),32);
+
+            memcpy(sendPto->preData, folderName.toStdString().c_str(),32);
             memcpy(sendPto->data, curPath.toStdString().c_str(), curPath.size());
+            sendPto->code = 0;
             CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
             free(sendPto);
             sendPto = NULL;
@@ -62,7 +63,7 @@ void Files::on_freshPB_clicked()
     loadFiles();
 }
 
-void Files::on_switch_to_files_widget(int currRow)
+void Files::switch_to_files_widget(int currRow)
 {   if(currRow == 1){
         loadFiles();
     }
@@ -205,7 +206,7 @@ void Files::on_renamePB_clicked()
     }
 }
 
-void Files::on_double_clicked(const QModelIndex& index)
+void Files::double_clicked(const QModelIndex& index)
 {
     QString fileName = index.data().toString();
     QString curPath = CloudClient::getInstance().getCurPath();
@@ -240,7 +241,7 @@ void Files::on_backPB_clicked()
 
         memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
         sendPto->msgType = ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST;
-
+        sendPto->code =0;
         CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
         CloudClient::getInstance().setCurPath(curPath);
         free(sendPto);

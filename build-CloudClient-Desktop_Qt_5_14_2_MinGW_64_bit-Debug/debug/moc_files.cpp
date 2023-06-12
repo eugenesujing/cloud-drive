@@ -23,7 +23,7 @@ QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_Files_t {
     QByteArrayData data[16];
-    char stringdata0[250];
+    char stringdata0[244];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -36,24 +36,24 @@ QT_MOC_LITERAL(0, 0, 5), // "Files"
 QT_MOC_LITERAL(1, 6, 22), // "on_newFolderPB_clicked"
 QT_MOC_LITERAL(2, 29, 0), // ""
 QT_MOC_LITERAL(3, 30, 18), // "on_freshPB_clicked"
-QT_MOC_LITERAL(4, 49, 25), // "on_switch_to_files_widget"
-QT_MOC_LITERAL(5, 75, 7), // "currRow"
-QT_MOC_LITERAL(6, 83, 19), // "on_deletePB_clicked"
-QT_MOC_LITERAL(7, 103, 19), // "on_renamePB_clicked"
-QT_MOC_LITERAL(8, 123, 17), // "on_double_clicked"
-QT_MOC_LITERAL(9, 141, 11), // "QModelIndex"
-QT_MOC_LITERAL(10, 153, 5), // "index"
-QT_MOC_LITERAL(11, 159, 17), // "on_backPB_clicked"
-QT_MOC_LITERAL(12, 177, 19), // "on_uploadPB_clicked"
-QT_MOC_LITERAL(13, 197, 11), // "uploadBegin"
-QT_MOC_LITERAL(14, 209, 21), // "on_downloadPB_clicked"
-QT_MOC_LITERAL(15, 231, 18) // "on_sharePB_clicked"
+QT_MOC_LITERAL(4, 49, 22), // "switch_to_files_widget"
+QT_MOC_LITERAL(5, 72, 7), // "currRow"
+QT_MOC_LITERAL(6, 80, 19), // "on_deletePB_clicked"
+QT_MOC_LITERAL(7, 100, 19), // "on_renamePB_clicked"
+QT_MOC_LITERAL(8, 120, 14), // "double_clicked"
+QT_MOC_LITERAL(9, 135, 11), // "QModelIndex"
+QT_MOC_LITERAL(10, 147, 5), // "index"
+QT_MOC_LITERAL(11, 153, 17), // "on_backPB_clicked"
+QT_MOC_LITERAL(12, 171, 19), // "on_uploadPB_clicked"
+QT_MOC_LITERAL(13, 191, 11), // "uploadBegin"
+QT_MOC_LITERAL(14, 203, 21), // "on_downloadPB_clicked"
+QT_MOC_LITERAL(15, 225, 18) // "on_sharePB_clicked"
 
     },
     "Files\0on_newFolderPB_clicked\0\0"
-    "on_freshPB_clicked\0on_switch_to_files_widget\0"
+    "on_freshPB_clicked\0switch_to_files_widget\0"
     "currRow\0on_deletePB_clicked\0"
-    "on_renamePB_clicked\0on_double_clicked\0"
+    "on_renamePB_clicked\0double_clicked\0"
     "QModelIndex\0index\0on_backPB_clicked\0"
     "on_uploadPB_clicked\0uploadBegin\0"
     "on_downloadPB_clicked\0on_sharePB_clicked"
@@ -110,10 +110,10 @@ void Files::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void 
         switch (_id) {
         case 0: _t->on_newFolderPB_clicked(); break;
         case 1: _t->on_freshPB_clicked(); break;
-        case 2: _t->on_switch_to_files_widget((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 2: _t->switch_to_files_widget((*reinterpret_cast< int(*)>(_a[1]))); break;
         case 3: _t->on_deletePB_clicked(); break;
         case 4: _t->on_renamePB_clicked(); break;
-        case 5: _t->on_double_clicked((*reinterpret_cast< const QModelIndex(*)>(_a[1]))); break;
+        case 5: _t->double_clicked((*reinterpret_cast< const QModelIndex(*)>(_a[1]))); break;
         case 6: _t->on_backPB_clicked(); break;
         case 7: _t->on_uploadPB_clicked(); break;
         case 8: _t->uploadBegin(); break;

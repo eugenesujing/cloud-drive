@@ -23,17 +23,19 @@ signals:
     void clientOff(MyTcpSocket*);
 private:
     QString socketName;
-    void respond(QString respondMsg, int ret, ENUM_MSG_TYPE type);
-    void loadFolder(QString fullPath, int code, bool isOpen = false, QString fileName =NULL);
+
     QFile uploadFile;
     long long fileUploadSoFar;
     long long fileTotalSize;
     bool isUploading;
     char uploadFileName[32];
-    int currUploadCount;
     QTimer downloadTimer;
     char downloadFileName[32];
     QFile fileDownload;
+
+    void respond(QString respondMsg, int ret, ENUM_MSG_TYPE type);
+    void loadFolder(QString fullPath, int code, bool isOpen = false, QString fileName =NULL);
+    void copyFile(QString copyFilePath, QString pasteFilePath);
 };
 
 #endif // MYTCPSOCKET_H

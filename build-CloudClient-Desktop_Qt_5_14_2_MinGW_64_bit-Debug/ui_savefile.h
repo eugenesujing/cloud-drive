@@ -23,36 +23,36 @@ QT_BEGIN_NAMESPACE
 class Ui_SaveFile
 {
 public:
-    QWidget *widget;
+    QWidget *layoutWidget;
     QGridLayout *gridLayout;
     QHBoxLayout *horizontalLayout;
     QLabel *label;
     QPushButton *pushButton_2;
     QListWidget *listWidget;
     QHBoxLayout *horizontalLayout_2;
-    QPushButton *pushButton;
-    QPushButton *pushButton_3;
-    QPushButton *pushButton_4;
+    QPushButton *newFolder;
+    QPushButton *confirm;
+    QPushButton *cancel;
 
     void setupUi(QWidget *SaveFile)
     {
         if (SaveFile->objectName().isEmpty())
             SaveFile->setObjectName(QString::fromUtf8("SaveFile"));
         SaveFile->resize(635, 473);
-        widget = new QWidget(SaveFile);
-        widget->setObjectName(QString::fromUtf8("widget"));
-        widget->setGeometry(QRect(10, 10, 611, 451));
-        gridLayout = new QGridLayout(widget);
+        layoutWidget = new QWidget(SaveFile);
+        layoutWidget->setObjectName(QString::fromUtf8("layoutWidget"));
+        layoutWidget->setGeometry(QRect(10, 10, 611, 451));
+        gridLayout = new QGridLayout(layoutWidget);
         gridLayout->setObjectName(QString::fromUtf8("gridLayout"));
         gridLayout->setContentsMargins(0, 0, 0, 0);
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
-        label = new QLabel(widget);
+        label = new QLabel(layoutWidget);
         label->setObjectName(QString::fromUtf8("label"));
 
         horizontalLayout->addWidget(label);
 
-        pushButton_2 = new QPushButton(widget);
+        pushButton_2 = new QPushButton(layoutWidget);
         pushButton_2->setObjectName(QString::fromUtf8("pushButton_2"));
 
         horizontalLayout->addWidget(pushButton_2);
@@ -62,7 +62,7 @@ public:
 
         gridLayout->addLayout(horizontalLayout, 0, 0, 1, 1);
 
-        listWidget = new QListWidget(widget);
+        listWidget = new QListWidget(layoutWidget);
         listWidget->setObjectName(QString::fromUtf8("listWidget"));
 
         gridLayout->addWidget(listWidget, 1, 0, 1, 1);
@@ -70,26 +70,26 @@ public:
         horizontalLayout_2 = new QHBoxLayout();
         horizontalLayout_2->setSpacing(50);
         horizontalLayout_2->setObjectName(QString::fromUtf8("horizontalLayout_2"));
-        pushButton = new QPushButton(widget);
-        pushButton->setObjectName(QString::fromUtf8("pushButton"));
+        newFolder = new QPushButton(layoutWidget);
+        newFolder->setObjectName(QString::fromUtf8("newFolder"));
         QFont font;
         font.setFamily(QString::fromUtf8("Arial"));
         font.setPointSize(12);
-        pushButton->setFont(font);
+        newFolder->setFont(font);
 
-        horizontalLayout_2->addWidget(pushButton);
+        horizontalLayout_2->addWidget(newFolder);
 
-        pushButton_3 = new QPushButton(widget);
-        pushButton_3->setObjectName(QString::fromUtf8("pushButton_3"));
-        pushButton_3->setFont(font);
+        confirm = new QPushButton(layoutWidget);
+        confirm->setObjectName(QString::fromUtf8("confirm"));
+        confirm->setFont(font);
 
-        horizontalLayout_2->addWidget(pushButton_3);
+        horizontalLayout_2->addWidget(confirm);
 
-        pushButton_4 = new QPushButton(widget);
-        pushButton_4->setObjectName(QString::fromUtf8("pushButton_4"));
-        pushButton_4->setFont(font);
+        cancel = new QPushButton(layoutWidget);
+        cancel->setObjectName(QString::fromUtf8("cancel"));
+        cancel->setFont(font);
 
-        horizontalLayout_2->addWidget(pushButton_4);
+        horizontalLayout_2->addWidget(cancel);
 
 
         gridLayout->addLayout(horizontalLayout_2, 2, 0, 1, 1);
@@ -105,9 +105,9 @@ public:
         SaveFile->setWindowTitle(QCoreApplication::translate("SaveFile", "Form", nullptr));
         label->setText(QCoreApplication::translate("SaveFile", "<html><head/><body><p><span style=\" font-size:14pt; font-weight:600;\">My Files</span></p></body></html>", nullptr));
         pushButton_2->setText(QCoreApplication::translate("SaveFile", "Back", nullptr));
-        pushButton->setText(QCoreApplication::translate("SaveFile", "New Folder", nullptr));
-        pushButton_3->setText(QCoreApplication::translate("SaveFile", "Confirm", nullptr));
-        pushButton_4->setText(QCoreApplication::translate("SaveFile", "Cancel", nullptr));
+        newFolder->setText(QCoreApplication::translate("SaveFile", "New Folder", nullptr));
+        confirm->setText(QCoreApplication::translate("SaveFile", "Confirm", nullptr));
+        cancel->setText(QCoreApplication::translate("SaveFile", "Cancel", nullptr));
     } // retranslateUi
 
 };

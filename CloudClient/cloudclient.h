@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <QTcpSocket>
-#include "savefile.h"
+
 
 
 QT_BEGIN_NAMESPACE
@@ -51,7 +51,7 @@ private:
     bool isDownloading;
     qint64 fileUploadSoFar;
     qint64 fileTotalSize;
-    SaveFile* saveFile;
+
     //Load config from resource file
     void loadConfig();
 
