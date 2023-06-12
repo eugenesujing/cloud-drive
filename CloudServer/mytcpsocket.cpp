@@ -631,7 +631,7 @@ void MyTcpSocket::copyFile(QString copyFilePath, QString pasteFilePath)
         dir.mkdir(pasteFilePath);
 
         dir.setPath(copyFilePath);
-        for(QString file: dir.entryList(QDir::NoDotAndDotDot)){
+        for(QString file: dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot | QDir::Files)){
            copyFile(QString("%1/%2").arg(copyFilePath).arg(file), QString("%1/%2").arg(pasteFilePath).arg(file));
         }
     }else if(file.isFile()){
