@@ -23,12 +23,16 @@ SaveFile::~SaveFile()
     delete ui;
 }
 
-void SaveFile::init(QString senderName, QString path, QString fileName)
+void SaveFile::init(QString senderName, QString path, QString fileName, int widgetType, int widgetID)
 {
     sender = senderName;
     shareFileFullPath = path;
     shareFileName = fileName;
+    type = widgetType;
+    id = widgetID;
+
     loadFolder();
+    this->show();
 }
 
 void SaveFile::deleteListItem()
@@ -86,6 +90,7 @@ void SaveFile::double_clicked(const QModelIndex &index)
     }
     memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
     memcpy(sendPto->preData, fileName.toStdString().c_str(), fileName.size());
+    sprintf(sendPto->preData+32, "%d", id);
     sendPto->msgType = ENUM_MSG_TYPE_OPEN_FILE_REQUEST;
     sendPto->code = 1;
     CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
@@ -101,6 +106,8 @@ void SaveFile::loadFolder()
         return;
     }
     memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
+    //print widgetID to the second half of predata
+    sprintf(sendPto->preData+32, "%d", id);
     sendPto->msgType = ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST;
     sendPto->code = 1; // code 0 represents file system, 1 represents savefile system
     CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
@@ -109,7 +116,8 @@ void SaveFile::loadFolder()
     sendPto = NULL;
 }
 
-void SaveFile::on_pushButton_2_clicked()
+//back button
+void SaveFile::on_back_clicked()
 {
     QString root = QString("./%1").arg(CloudClient::getInstance().getLoginName());
     if(curPath != root){
@@ -123,6 +131,7 @@ void SaveFile::on_pushButton_2_clicked()
         }
 
         memcpy(sendPto->data,curPath.toStdString().c_str(),curPath.size());
+        sprintf(sendPto->preData+32, "%d", id);
         sendPto->msgType = ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST;
         sendPto->code = 1;
         CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
@@ -135,24 +144,34 @@ void SaveFile::on_pushButton_2_clicked()
 
 void SaveFile::on_cancel_clicked()
 {
-    int ret = QMessageBox::information(this,"Share File", "Are you sure you want to cancel this share?", QMessageBox::Yes, QMessageBox::No);
-    if(ret==QMessageBox::Yes){
-        qDebug()<<"cancel share";
-        this->hide();
-        QString respondMsg = QString("%1 refused your share file request.").arg(CloudClient::getInstance().getLoginName());
-        pto* respondPto = makePTO(respondMsg.size()+1);
-        respondPto->msgType = ENUM_MSG_TYPE_SHARE_FILE_RESEND_RESPOND;
-        if(respondPto==NULL){
-            qDebug()<<"malloc for sendPto failed on on_double_clicked";
-            return;
+    if(type == 0){
+        int ret = QMessageBox::information(this,"Share File", "Are you sure you want to cancel this share?", QMessageBox::Yes, QMessageBox::No);
+        if(ret==QMessageBox::Yes){
+            qDebug()<<"cancel share";
+            this->hide();
+            QString respondMsg = QString("%1 refused your share file request.").arg(CloudClient::getInstance().getLoginName());
+            pto* respondPto = makePTO(respondMsg.size()+1);
+            respondPto->msgType = ENUM_MSG_TYPE_SHARE_FILE_RESEND_RESPOND;
+            if(respondPto==NULL){
+                qDebug()<<"malloc for sendPto failed on on_double_clicked";
+                return;
+            }
+            memcpy(respondPto->preData, sender.toStdString().c_str(), 32);
+            memcpy(respondPto->data,respondMsg.toStdString().c_str(), respondMsg.size());
+            respondPto->code = 0;
+            CloudClient::getInstance().getSocket().write((char*)respondPto, respondPto->totalSize);
+        }else{
+            this->raise();
         }
-        memcpy(respondPto->preData, sender.toStdString().c_str(), 32);
-        memcpy(respondPto->data,respondMsg.toStdString().c_str(), respondMsg.size());
-        respondPto->code = 0;
-        CloudClient::getInstance().getSocket().write((char*)respondPto, respondPto->totalSize);
-    }else{
-        this->raise();
+    }else if(type == 1){
+        int ret = QMessageBox::information(this,"Move File", "Are you sure you want to cancel this move?", QMessageBox::Yes, QMessageBox::No);
+        if(ret == QMessageBox::Yes){
+            this->hide();
+        }else{
+            this->raise();
+        }
     }
+
 }
 
 void SaveFile::on_newFolder_clicked()
@@ -171,6 +190,7 @@ void SaveFile::on_newFolder_clicked()
             }
             sendPto->msgType = ENUM_MSG_TYPE_NEW_FOLDER_REQUEST;
             memcpy(sendPto->preData, folderName.toStdString().c_str(),32);
+            sprintf(sendPto->preData+32, "%d", id);
             memcpy(sendPto->data, curPath.toStdString().c_str(), curPath.size());
             sendPto->code = 1;
             CloudClient::getInstance().getSocket().write((char*)sendPto, sendPto->totalSize);
@@ -188,8 +208,13 @@ void SaveFile::on_confirm_clicked()
     this->hide();
 
     QString saveFileFullPath = QString("%1/%2").arg(curPath).arg(shareFileName);
+    if(type == 1 && saveFileFullPath==shareFileFullPath){
+        QMessageBox::warning(this, "Move File", "The path selected is the same as the original path. Please select another path.", QMessageBox::Ok);
+        this->show();
+        return;
+    }
     pto* respondPto = makePTO(saveFileFullPath.size()+shareFileFullPath.size()+2);
-    respondPto->msgType = ENUM_MSG_TYPE_SHARE_FILE_RESEND_RESPOND;
+    respondPto->msgType = type==0? ENUM_MSG_TYPE_SHARE_FILE_RESEND_RESPOND:ENUM_MSG_TYPE_MOVE_FILE_REQUEST;
     if(respondPto==NULL){
         qDebug()<<"malloc for sendPto failed on on_double_clicked";
         return;

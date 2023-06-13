@@ -9,7 +9,7 @@
 MyTcpSocket::MyTcpSocket()
 {
    connect(this, SIGNAL(readyRead()), this, SLOT(onRecv()));
-   connect(this, SIGNAL(disconnected()), this, SLOT(socektOff()));
+   connect(this, SIGNAL(disconnected()), this, SLOT(socketOff()));
    connect(&downloadTimer,SIGNAL(timeout()), this, SLOT(sendDownloadFile()));
    isUploading = false;
    fileUploadSoFar = 0;
@@ -316,7 +316,19 @@ void MyTcpSocket::onRecv()
 
                     respondMsg = QString("System cannot find '%1'. Please try again.").arg(curPath);
                 }
-                respond(respondMsg, ret, ENUM_MSG_TYPE_NEW_FOLDER_RESPOND);
+                pto* respPto = makePTO(respondMsg.size());
+                if(respPto==NULL){
+                    qDebug()<<"malloc for respPto failed.";
+                    return;
+                }
+                qDebug()<<respondMsg;
+                respPto->msgType = ENUM_MSG_TYPE_NEW_FOLDER_RESPOND;
+                respPto->code = ret;
+                memcpy(respPto->data, respondMsg.toStdString().c_str(),respondMsg.size());
+                memcpy(respPto->preData+32, recvPto->preData+32, 32);
+                write((char*)respPto,respPto->totalSize);
+                free(respPto);
+                respPto = NULL;
                 free(curPath);
                 curPath = NULL;
                 break;
@@ -324,7 +336,8 @@ void MyTcpSocket::onRecv()
             case ENUM_MSG_TYPE_LOAD_FOLDER_REQUEST:{
                 char* curPath = new char[recvPto->msgSize];
                 memcpy(curPath, recvPto->data, recvPto->msgSize);
-                loadFolder(curPath, recvPto->code);
+
+                loadFolder(curPath, recvPto);
                 delete [] curPath;
                 break;
             }
@@ -391,7 +404,7 @@ void MyTcpSocket::onRecv()
                 qDebug()<<"open file fullPath="<<fullPath;
                 QFileInfo info(fullPath);
                 if(info.isDir()){
-                    loadFolder(fullPath, recvPto->code, true, fileName);
+                    loadFolder(fullPath, recvPto, true, fileName);
                 }else if(info.isFile()){
                     //download file
                 }
@@ -411,11 +424,11 @@ void MyTcpSocket::onRecv()
                 QString respondMsg;
                 if(uploadFile.open(QIODevice::WriteOnly)){
 
-                   fileTotalSize = fileSize;
-                   fileUploadSoFar = 0;
-                   isUploading = true;
-                   qDebug()<<"FileName ="<<uploadFileName;
-                   qDebug()<<"fileTotalSize ="<<fileTotalSize;
+                    fileTotalSize = fileSize;
+                    fileUploadSoFar = 0;
+                    isUploading = true;
+                    qDebug()<<"FileName ="<<uploadFileName;
+                    qDebug()<<"fileTotalSize ="<<fileTotalSize;
                 }else{
                     respondMsg = QString("Failed to upload '%1'.").arg(uploadFileName);
                     respond(respondMsg, 0, ENUM_MSG_TYPE_UPLOAD_FILE_RESPOND);
@@ -481,7 +494,7 @@ void MyTcpSocket::onRecv()
                     recvPto->msgType = ENUM_MSG_TYPE_SHARE_FILE_RESPOND;
                     MyTcpServer::getInstance().resend(sender, recvPto);
                     recvPtoFreed = true;
-                }else if(recvPto->code == 1){
+                }else if(recvPto->code==1){
 
                     int savePathSize;
                     sscanf(recvPto->preData+32, "%d", &savePathSize);
@@ -489,6 +502,7 @@ void MyTcpSocket::onRecv()
                     memcpy(savePath, recvPto->data, savePathSize);
                     char* sharePath = new char[recvPto->msgSize - savePathSize];
                     memcpy(sharePath, recvPto->data+savePathSize, recvPto->msgSize-savePathSize);
+
                     copyFile(sharePath,savePath);
                     //respond to the sender about the share result
                     QString respondMsg = QString("%1 has accepted your share request.").arg(socketName);
@@ -504,19 +518,39 @@ void MyTcpSocket::onRecv()
 
                     //respond to the receiver the share result
                     respondMsg = QString("File has been copied to %1").arg(savePath);
-                    pto* respondPTOreceiver = makePTO(respondMsg.size()+1);
-                    if(respondPTOreceiver==NULL){
-                        qDebug()<<"malloc for sendPto failed on ENUM_MSG_TYPE_SHARE_FILE_RESEND_RESPOND";
-                        return;
-                    }
-                    respondPTOreceiver->code = 1;
-                    respondPTOreceiver->msgType = ENUM_MSG_TYPE_SHARE_FILE_RESPOND;
-                    memcpy(respondPTOreceiver->data, respondMsg.toStdString().c_str(), respondMsg.size());
-                    write((char*)respondPTOreceiver,respondPTOreceiver->totalSize);
-                    free(respondPTOreceiver);
-                    respondPTOreceiver = NULL;
+                    respond(respondMsg, 1, ENUM_MSG_TYPE_SHARE_FILE_RESPOND);
+
                 }
                 break;
+            }
+            case ENUM_MSG_TYPE_MOVE_FILE_REQUEST:{
+                int savePathSize;
+                sscanf(recvPto->preData+32, "%d", &savePathSize);
+                char* savePath = new char[savePathSize];
+                memcpy(savePath, recvPto->data, savePathSize);
+                char* sharePath = new char[recvPto->msgSize - savePathSize];
+                memcpy(sharePath, recvPto->data+savePathSize, recvPto->msgSize-savePathSize);
+
+                QString fileFullPath(savePath);
+                int index = fileFullPath.lastIndexOf('/');
+                QString fileName = fileFullPath.right(fileFullPath.size()-index-1);
+                QString fileDir = fileFullPath.left(index+1);
+                qDebug()<<"fileName="<<fileName;
+                qDebug()<<"fileDir="<<fileDir;
+                QFile file(sharePath);
+                QDir dir(fileDir);
+                int ret = file.rename(savePath);
+                QString respondMsg;
+                if(ret == 1){
+                    respondMsg = QString("File has been moved to %1").arg(savePath);
+                }else if(dir.exists(fileName)){
+                    respondMsg = QString("This destination already contains a file called '%1'.").arg(fileName);
+                }
+                else{
+                    respondMsg = QString("Failed to move '%1'. Please make sure the file is not currently opened by another application.").arg(fileName);
+                }
+                respond(respondMsg, ret, ENUM_MSG_TYPE_MOVE_FILE_RESPOND);
+
             }
             default:
                 break;
@@ -535,7 +569,7 @@ void MyTcpSocket::onRecv()
 
 
 //when the connection between client and server is off, we set account online status to 0 and emit signals for server to delete this socket
-void MyTcpSocket::socektOff()
+void MyTcpSocket::socketOff()
 {
     if(!socketName.isEmpty()){
         operDB::getInstance().handleOffline(socketName.toStdString().c_str());
@@ -578,7 +612,7 @@ void MyTcpSocket::respond(QString respondMsg, int ret, ENUM_MSG_TYPE type)
 {
     pto* respPto = makePTO(respondMsg.size());
     if(respPto==NULL){
-        qDebug()<<"malloc for respPto failed.";
+        qDebug()<<"malloc for respPto failed for "<<type;
         return;
     }
     qDebug()<<respondMsg;
@@ -591,7 +625,7 @@ void MyTcpSocket::respond(QString respondMsg, int ret, ENUM_MSG_TYPE type)
 }
 
 //isOpen decides if its a load folder request or open file request
-void MyTcpSocket::loadFolder(QString fullPath,int code, bool isOpen, QString fileName)
+void MyTcpSocket::loadFolder(QString fullPath,pto* recvPto, bool isOpen, QString fileName)
 {
     QDir dir(fullPath);
     QFileInfoList fileInfoList = dir.entryInfoList();
@@ -616,7 +650,8 @@ void MyTcpSocket::loadFolder(QString fullPath,int code, bool isOpen, QString fil
             pInfo->fileType = 1;
         }
     }
-    respPto->code = code;
+    respPto->code = recvPto->code;
+    memcpy(respPto->preData+32, recvPto->preData+32, 32);
     qDebug()<<"load folder code = "<<respPto->code;
     write((char*)respPto, respPto->totalSize);
     free(respPto);

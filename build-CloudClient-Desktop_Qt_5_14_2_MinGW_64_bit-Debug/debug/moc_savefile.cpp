@@ -23,7 +23,7 @@ QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_SaveFile_t {
     QByteArrayData data[9];
-    char stringdata0[125];
+    char stringdata0[117];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -37,16 +37,15 @@ QT_MOC_LITERAL(1, 9, 14), // "double_clicked"
 QT_MOC_LITERAL(2, 24, 0), // ""
 QT_MOC_LITERAL(3, 25, 11), // "QModelIndex"
 QT_MOC_LITERAL(4, 37, 5), // "index"
-QT_MOC_LITERAL(5, 43, 23), // "on_pushButton_2_clicked"
-QT_MOC_LITERAL(6, 67, 17), // "on_cancel_clicked"
-QT_MOC_LITERAL(7, 85, 20), // "on_newFolder_clicked"
-QT_MOC_LITERAL(8, 106, 18) // "on_confirm_clicked"
+QT_MOC_LITERAL(5, 43, 15), // "on_back_clicked"
+QT_MOC_LITERAL(6, 59, 17), // "on_cancel_clicked"
+QT_MOC_LITERAL(7, 77, 20), // "on_newFolder_clicked"
+QT_MOC_LITERAL(8, 98, 18) // "on_confirm_clicked"
 
     },
     "SaveFile\0double_clicked\0\0QModelIndex\0"
-    "index\0on_pushButton_2_clicked\0"
-    "on_cancel_clicked\0on_newFolder_clicked\0"
-    "on_confirm_clicked"
+    "index\0on_back_clicked\0on_cancel_clicked\0"
+    "on_newFolder_clicked\0on_confirm_clicked"
 };
 #undef QT_MOC_LITERAL
 
@@ -87,7 +86,7 @@ void SaveFile::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, vo
         Q_UNUSED(_t)
         switch (_id) {
         case 0: _t->double_clicked((*reinterpret_cast< const QModelIndex(*)>(_a[1]))); break;
-        case 1: _t->on_pushButton_2_clicked(); break;
+        case 1: _t->on_back_clicked(); break;
         case 2: _t->on_cancel_clicked(); break;
         case 3: _t->on_newFolder_clicked(); break;
         case 4: _t->on_confirm_clicked(); break;

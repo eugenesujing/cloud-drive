@@ -1,5 +1,6 @@
 #include "files.h"
 #include "ui_files.h"
+#include "home.h"
 #include "cloudclient.h"
 #include <QInputDialog>
 #include <QMessageBox>
@@ -349,7 +350,25 @@ void Files::on_downloadPB_clicked()
 void Files::on_sharePB_clicked()
 {
     QListWidgetItem* listItem  = ui->listWidget->currentItem();
-    sFile = new ShareFile;
-    sFile->setFileName(listItem->text());
-    sFile->show();
+    if(listItem == NULL){
+        QMessageBox::warning(this, "Share file", "Please select a file.");
+    }else{
+        sFile = new ShareFile;
+        sFile->setFileName(listItem->text());
+        sFile->show();
+    }
+
+}
+
+void Files::on_movePB_clicked()
+{
+    QListWidgetItem* listItem  = ui->listWidget->currentItem();
+    if(listItem == NULL){
+        QMessageBox::warning(this, "Move file", "Please select a file.");
+    }else{
+        QString fileName = listItem->text();
+        QString filePath = QString("%1/%2").arg(CloudClient::getInstance().getCurPath()).arg(fileName);
+        Home::getInstance().initNewSaveFileWidget("", filePath, fileName, 1);
+    }
+
 }

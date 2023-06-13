@@ -37,12 +37,12 @@ QT_MOC_LITERAL(1, 12, 9), // "clientOff"
 QT_MOC_LITERAL(2, 22, 0), // ""
 QT_MOC_LITERAL(3, 23, 12), // "MyTcpSocket*"
 QT_MOC_LITERAL(4, 36, 6), // "onRecv"
-QT_MOC_LITERAL(5, 43, 9), // "socektOff"
+QT_MOC_LITERAL(5, 43, 9), // "socketOff"
 QT_MOC_LITERAL(6, 53, 16) // "sendDownloadFile"
 
     },
     "MyTcpSocket\0clientOff\0\0MyTcpSocket*\0"
-    "onRecv\0socektOff\0sendDownloadFile"
+    "onRecv\0socketOff\0sendDownloadFile"
 };
 #undef QT_MOC_LITERAL
 
@@ -86,7 +86,7 @@ void MyTcpSocket::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id,
         switch (_id) {
         case 0: _t->clientOff((*reinterpret_cast< MyTcpSocket*(*)>(_a[1]))); break;
         case 1: _t->onRecv(); break;
-        case 2: _t->socektOff(); break;
+        case 2: _t->socketOff(); break;
         case 3: _t->sendDownloadFile(); break;
         default: ;
         }

@@ -47,6 +47,8 @@ private slots:
 
     void on_sharePB_clicked();
 
+    void on_movePB_clicked();
+
 private:
     Ui::Files *ui;
     void deleteListItem();

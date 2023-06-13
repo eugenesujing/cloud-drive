@@ -27,7 +27,7 @@ public:
     QGridLayout *gridLayout;
     QHBoxLayout *horizontalLayout;
     QLabel *label;
-    QPushButton *pushButton_2;
+    QPushButton *back;
     QListWidget *listWidget;
     QHBoxLayout *horizontalLayout_2;
     QPushButton *newFolder;
@@ -52,10 +52,10 @@ public:
 
         horizontalLayout->addWidget(label);
 
-        pushButton_2 = new QPushButton(layoutWidget);
-        pushButton_2->setObjectName(QString::fromUtf8("pushButton_2"));
+        back = new QPushButton(layoutWidget);
+        back->setObjectName(QString::fromUtf8("back"));
 
-        horizontalLayout->addWidget(pushButton_2);
+        horizontalLayout->addWidget(back);
 
         horizontalLayout->setStretch(0, 5);
         horizontalLayout->setStretch(1, 1);
@@ -104,7 +104,7 @@ public:
     {
         SaveFile->setWindowTitle(QCoreApplication::translate("SaveFile", "Form", nullptr));
         label->setText(QCoreApplication::translate("SaveFile", "<html><head/><body><p><span style=\" font-size:14pt; font-weight:600;\">My Files</span></p></body></html>", nullptr));
-        pushButton_2->setText(QCoreApplication::translate("SaveFile", "Back", nullptr));
+        back->setText(QCoreApplication::translate("SaveFile", "Back", nullptr));
         newFolder->setText(QCoreApplication::translate("SaveFile", "New Folder", nullptr));
         confirm->setText(QCoreApplication::translate("SaveFile", "Confirm", nullptr));
         cancel->setText(QCoreApplication::translate("SaveFile", "Cancel", nullptr));

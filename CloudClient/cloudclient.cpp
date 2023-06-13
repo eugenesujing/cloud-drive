@@ -327,7 +327,9 @@ void CloudClient::onRecv()
                     if(recvPto->code == 1){
                         Home::getInstance().getFiles()->loadFiles();
                     }else if(recvPto->code == 2){
-                        Home::getInstance().getSavaFile()->loadFolder();
+                        int id = 0;
+                        sscanf(recvPto->preData+32, "%d", &id);
+                        Home::getInstance().getSavaFile(id)->loadFolder();
                     }
 
                 }
@@ -340,7 +342,9 @@ void CloudClient::onRecv()
                 if(recvPto->code == 0){
                     Home::getInstance().getFiles()->updateFileList(recvPto);
                 }else if(recvPto->code == 1){
-                    Home::getInstance().getSavaFile()->updateFileList(recvPto);
+                    int id = 0;
+                    sscanf(recvPto->preData+32, "%d", &id);
+                    Home::getInstance().getSavaFile(id)->updateFileList(recvPto);
                 }
 
                 break;
@@ -383,8 +387,10 @@ void CloudClient::onRecv()
 
 
                 }else if(recvPto->code == 1){
-                    Home::getInstance().getSavaFile()->setCurPath(fileName);
-                    Home::getInstance().getSavaFile()->updateFileList(recvPto);
+                    int id = 0;
+                    sscanf(recvPto->preData+32, "%d", &id);
+                    Home::getInstance().getSavaFile(id)->setCurPath(fileName);
+                    Home::getInstance().getSavaFile(id)->updateFileList(recvPto);
                 }
 
                 break;
@@ -435,8 +441,7 @@ void CloudClient::onRecv()
                 QString fileName = filePath.right(filePath.size()-lastIndex-1);
                 int ret = QMessageBox::information(this, "Share File Request", QString("%1 would like to share file <%2>.").arg(sender).arg(fileName), QMessageBox::Yes, QMessageBox::No);
                 if(ret==QMessageBox::Yes){
-                    Home::getInstance().getSavaFile()->init(sender,filePath, fileName);
-                    Home::getInstance().getSavaFile()->show();
+                    Home::getInstance().initNewSaveFileWidget(sender,filePath, fileName, 0);
                 }else{
                     qDebug()<<"ret == no";
                     QString respondMsg = QString("%1 refused your share file request.").arg(loginName);
@@ -458,6 +463,20 @@ void CloudClient::onRecv()
                 memset(respond,0,msgSize+1);
                 memcpy(respond,(char*)recvPto->data,msgSize);
                 QMessageBox::information(this, "Share File Request", respond);
+                free(respond);
+                respond = NULL;
+                break;
+            }
+            case ENUM_MSG_TYPE_MOVE_FILE_RESPOND:{
+                char* respond = (char*)malloc(msgSize+1);
+                memset(respond,0,msgSize+1);
+                memcpy(respond,(char*)recvPto->data,msgSize);
+                if(recvPto->code==1){
+                    QMessageBox::information(this, "Share File Request", respond);
+                }else{
+                    QMessageBox::warning(this, "Share File Request", respond);
+                }
+
                 free(respond);
                 respond = NULL;
                 break;

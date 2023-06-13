@@ -17,7 +17,7 @@ public:
 public slots:
     void onRecv();
     //when the connection between client and server is off, we set account online status to 0 and emit signals for server to delete this socket
-    void socektOff();
+    void socketOff();
     void sendDownloadFile();
 signals:
     void clientOff(MyTcpSocket*);
@@ -34,7 +34,7 @@ private:
     QFile fileDownload;
 
     void respond(QString respondMsg, int ret, ENUM_MSG_TYPE type);
-    void loadFolder(QString fullPath, int code, bool isOpen = false, QString fileName =NULL);
+    void loadFolder(QString fullPath, pto* recvPto, bool isOpen = false, QString fileName =NULL);
     void copyFile(QString copyFilePath, QString pasteFilePath);
 };
 

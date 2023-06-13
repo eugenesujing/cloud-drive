@@ -25,10 +25,11 @@ class Ui_Files
 {
 public:
     QGridLayout *gridLayout;
-    QHBoxLayout *horizontalLayout;
+    QHBoxLayout *horizontalLayout_2;
     QVBoxLayout *verticalLayout;
     QLabel *label;
     QListWidget *listWidget;
+    QHBoxLayout *horizontalLayout;
     QVBoxLayout *verticalLayout_2;
     QPushButton *backPB;
     QPushButton *newFolderPB;
@@ -39,6 +40,7 @@ public:
     QPushButton *uploadPB;
     QPushButton *downloadPB;
     QPushButton *sharePB;
+    QPushButton *movePB;
 
     void setupUi(QWidget *Files)
     {
@@ -47,8 +49,8 @@ public:
         Files->resize(672, 497);
         gridLayout = new QGridLayout(Files);
         gridLayout->setObjectName(QString::fromUtf8("gridLayout"));
-        horizontalLayout = new QHBoxLayout();
-        horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
+        horizontalLayout_2 = new QHBoxLayout();
+        horizontalLayout_2->setObjectName(QString::fromUtf8("horizontalLayout_2"));
         verticalLayout = new QVBoxLayout();
         verticalLayout->setSpacing(0);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
@@ -69,8 +71,10 @@ public:
         verticalLayout->addWidget(listWidget);
 
 
-        horizontalLayout->addLayout(verticalLayout);
+        horizontalLayout_2->addLayout(verticalLayout);
 
+        horizontalLayout = new QHBoxLayout();
+        horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
         verticalLayout_2 = new QVBoxLayout();
         verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
         verticalLayout_2->setContentsMargins(6, -1, 6, -1);
@@ -116,7 +120,6 @@ public:
 
         verticalLayout_3 = new QVBoxLayout();
         verticalLayout_3->setObjectName(QString::fromUtf8("verticalLayout_3"));
-        verticalLayout_3->setContentsMargins(6, -1, 6, -1);
         uploadPB = new QPushButton(Files);
         uploadPB->setObjectName(QString::fromUtf8("uploadPB"));
         uploadPB->setFont(font1);
@@ -138,11 +141,21 @@ public:
 
         verticalLayout_3->addWidget(sharePB);
 
+        movePB = new QPushButton(Files);
+        movePB->setObjectName(QString::fromUtf8("movePB"));
+        movePB->setFont(font1);
+        movePB->setAutoFillBackground(false);
+
+        verticalLayout_3->addWidget(movePB);
+
 
         horizontalLayout->addLayout(verticalLayout_3);
 
 
-        gridLayout->addLayout(horizontalLayout, 0, 0, 1, 1);
+        horizontalLayout_2->addLayout(horizontalLayout);
+
+
+        gridLayout->addLayout(horizontalLayout_2, 0, 0, 1, 1);
 
 
         retranslateUi(Files);
@@ -162,6 +175,7 @@ public:
         uploadPB->setText(QCoreApplication::translate("Files", "Upload", nullptr));
         downloadPB->setText(QCoreApplication::translate("Files", "Download", nullptr));
         sharePB->setText(QCoreApplication::translate("Files", "Share", nullptr));
+        movePB->setText(QCoreApplication::translate("Files", "Move", nullptr));
     } // retranslateUi
 
 };
